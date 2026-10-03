@@ -58,6 +58,10 @@ fixtures/contexts/*.json   contextos de prueba con el resultado esperado (node s
 3. Añádelo a `index.json`: `"mi_mensaje": "messages/mi_mensaje.json"`.
 4. `node scripts/validate.mjs` (o espera a la CI). En verde, merge a `main` y listo.
 
+## Renderizado fijo
+
+Un mensaje se ve exactamente igual que en `preview/` en cualquier ventana o monitor. La app maqueta el contenido al ancho fijo del mensaje (`size`), con fuente base fija, y si la ventana es más pequeña escala el diálogo entero hacia abajo; nunca recoloca el contenido. Si el alto no cabe, scroll interno.
+
 ## Qué va en el JSON y qué en el HTML
 
 | En el JSON (lo pinta el design system) | En el HTML (cuerpo) |
