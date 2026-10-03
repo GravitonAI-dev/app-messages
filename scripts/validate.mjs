@@ -105,6 +105,7 @@ function validateMessage(code, file) {
     if (corner) fail(where, 'footer_link solo existe en los AppDialog (mensajes centrados)');
   }
   if (m.backdrop === 'blur' && m.dismissible === false && !(Array.isArray(m.actions) && m.actions.length)) fail(where, 'un bloqueante sin X necesita al menos un botón en actions');
+  if (m.backdrop === 'blur' && m.dismissible === false && Array.isArray(m.actions) && m.actions.some((a) => a && a.action === 'dismiss')) fail(where, 'un bloqueante sin X no puede llevar un botón dismiss: solo se quita cuando deja de cumplirse su when');
 
   let html = null;
   if (m.html_file) {

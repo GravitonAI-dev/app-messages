@@ -84,7 +84,7 @@ fixtures/contexts/*.json   contextos de prueba con el resultado esperado (node s
 | `actions` | lista de 1 a 3 `{label, action, url?, variant}` | Botones del pie, de izquierda a derecha. El primario a la derecha |
 | `footer_link` | `{label, action}` | Enlace a la izquierda del pie |
 
-Un mensaje con blur y sin X debe ser `persistent: true`.
+Un mensaje con blur y sin X debe ser `persistent: true`, llevar al menos un botón y no puede llevar un botón `dismiss`: solo se quita cuando deja de cumplirse su `when`.
 
 ## Condición `when`
 
