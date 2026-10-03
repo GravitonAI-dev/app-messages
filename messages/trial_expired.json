@@ -6,7 +6,7 @@
     "usage.payment_status": "expired",
     "membership.plan_code": "free_plan"
   },
-  "size": 680,
+  "size": "lg",
   "position": "center",
   "backdrop": "blur",
   "dismissible": false,
