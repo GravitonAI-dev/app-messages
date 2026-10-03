@@ -4,9 +4,14 @@
   "enabled": true,
   "when": {
     "membership.payment_status": "paid",
-    "membership.plan_code": { "neq": "free_plan" },
-    "membership.hours_since_start": { "lte": 24 }
+    "membership.plan_code": {
+      "neq": "free_plan"
+    },
+    "membership.hours_since_start": {
+      "lte": 24
+    }
   },
+  "title": "Compra completada",
   "size": "md",
   "position": "center",
   "backdrop": "blur",
@@ -14,5 +19,13 @@
   "persistent": false,
   "auto_close": 0,
   "priority": 60,
-  "html_file": "purchase_success.html"
+  "html_file": "purchase_success.html",
+  "actions": [
+    {
+      "label": "Ir al Panel de Usuario",
+      "action": "url",
+      "url": "https://confidentialai.es/dashboard",
+      "variant": "primary"
+    }
+  ]
 }

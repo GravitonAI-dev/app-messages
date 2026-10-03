@@ -19,8 +19,14 @@ const CONTEXT_FIELDS = [
   'membership.max_days', 'membership.expires_at', 'membership.days_left', 'membership.hours_since_start',
   'app.version', 'app.platform',
 ];
-const VARIABLES = ['user_name', 'plan_name', 'plan_end_date', 'days_left', 'usage_percentage'];
+const COLOR_ROLES = ['brandPrimary', 'brandHover', 'accentSoft', 'accentLine', 'textOnAccent', 'surface', 'surfaceMuted', 'surfaceRaised',
+  'textPrimary', 'textHeading', 'textSecondary', 'textMuted', 'textTertiary', 'border', 'divider', 'controlBorder', 'controlFill',
+  'success', 'successSurface', 'warning', 'warningSurface', 'danger', 'dangerText', 'dangerSurface', 'infoSurface'];
+const VARIABLES = ['user_name', 'plan_name', 'plan_end_date', 'days_left', 'usage_percentage', ...COLOR_ROLES.map((r) => 'c.' + r)];
 const ACTIONS = ['checkout', 'url', 'recheck', 'dismiss', 'signout'];
+const VARIANTS = ['primary', 'secondary', 'ghost', 'danger'];
+const TONES = ['info', 'success', 'warning', 'danger'];
+const CORNER = ['top-right', 'bottom-right'];
 const TAGS = ['div', 'p', 'h1', 'h2', 'h3', 'span', 'strong', 'em', 'a', 'img', 'table', 'tr', 'td', 'ul', 'li', 'br', 'hr'];
 const ATTRS = ['style', 'href', 'src', 'alt', 'width', 'height'];
 const STYLE_PROPS = [
@@ -74,6 +80,29 @@ function validateMessage(code, file) {
   if (m.backdrop === 'blur' && m.dismissible === false && m.persistent === false) fail(where, 'un mensaje con blur y sin X tiene que ser persistent: true (si no, nunca podría cerrarse)');
   if (m.auto_close > 0 && m.dismissible === false) fail(where, 'auto_close solo tiene sentido con dismissible: true');
 
+  const corner = CORNER.includes(m.position);
+  if (!corner && (typeof m.title !== 'string' || !m.title.trim())) fail(where, 'los mensajes centrados son un AppDialog y necesitan "title"');
+  if (corner && m.backdrop === 'blur') fail(where, 'un mensaje de esquina (AppBanner) no lleva blur');
+  if (corner && !TONES.includes(m.tone)) fail(where, `los mensajes de esquina son un AppBanner y necesitan "tone" (${TONES.join(', ')})`);
+  if ('tone' in m && !TONES.includes(m.tone)) fail(where, `tone "${m.tone}" inválido`);
+  if ('actions' in m) {
+    if (!Array.isArray(m.actions) || m.actions.length > 3) fail(where, 'actions debe ser una lista de 1 a 3 botones');
+    else m.actions.forEach((a, i) => {
+      if (!a || typeof a.label !== 'string' || !a.label.trim()) fail(where, `actions[${i}]: falta label`);
+      if (!ACTIONS.includes(a.action)) fail(where, `actions[${i}]: acción "${a.action}" desconocida. Admitidas: ${ACTIONS.join(', ')}`);
+      if (a.action === 'url' && !/^https:\/\//.test(a.url ?? '')) fail(where, `actions[${i}]: la acción url necesita "url" https://`);
+      if (a.action !== 'url' && 'url' in a) fail(where, `actions[${i}]: "url" solo va con la acción url`);
+      if ('variant' in a && !VARIANTS.includes(a.variant)) fail(where, `actions[${i}]: variant "${a.variant}" inválido (${VARIANTS.join(', ')})`);
+    });
+    if (corner && m.actions.length > 1) fail(where, 'un AppBanner lleva como mucho un botón');
+  }
+  if ('footer_link' in m) {
+    const l = m.footer_link;
+    if (!l || typeof l.label !== 'string' || !ACTIONS.includes(l.action)) fail(where, 'footer_link necesita label y una acción válida');
+    if (corner) fail(where, 'footer_link solo existe en los AppDialog (mensajes centrados)');
+  }
+  if (m.backdrop === 'blur' && m.dismissible === false && !(Array.isArray(m.actions) && m.actions.length)) fail(where, 'un bloqueante sin X necesita al menos un botón en actions');
+
   let html = null;
   if (m.html_file) {
     const htmlPath = resolve(ROOT, 'messages', m.html_file);
@@ -107,19 +136,25 @@ function validateHtml(where, html) {
       if (attr === 'style') for (const decl of value.split(';')) {
         const prop = decl.split(':')[0].trim().toLowerCase();
         if (prop && !STYLE_PROPS.includes(prop)) fail(where, `propiedad CSS "${prop}" no admitida en <${tag}>`);
+        if (/^(color|background|background-color|border|border-top|border-bottom|border-left|border-right)$/.test(prop) && /#[0-9a-f]{3,8}\b|rgba?\(/i.test(decl))
+          fail(where, `color fijo en "${decl.trim()}" de <${tag}>: usa una variable {{c.<rol>}} para que siga el tema claro/oscuro`);
       }
       if (attr === 'href') validateHref(where, value);
       if (attr === 'src' && !/^https:\/\//.test(value)) fail(where, `src debe ser https:// (${value})`);
     }
   }
 
-  const varRe = /\{\{\s*([a-z_]+)\s*\}\}/g;
+  const varRe = /\{\{\s*([a-zA-Z_.]+)\s*\}\}/g;
   let v;
   while ((v = varRe.exec(body))) if (!VARIABLES.includes(v[1])) fail(where, `variable {{${v[1]}}} desconocida. Admitidas: ${VARIABLES.join(', ')}`);
 }
 
 function validateHref(where, href) {
   if (href.startsWith('confai://')) {
+    fail(where, `enlace ${href} dentro del HTML: los botones y enlaces de acción van en "actions" / "footer_link" del JSON (AppButton / AppLink)`);
+    return;
+  }
+  if (false) {
     const rest = href.slice('confai://'.length);
     const action = rest.split('?')[0];
     if (!ACTIONS.includes(action)) { fail(where, `acción confai://${action} desconocida. Admitidas: ${ACTIONS.join(', ')}`); return; }

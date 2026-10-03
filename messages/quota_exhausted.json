@@ -3,9 +3,14 @@
   "id": "quota_exhausted",
   "enabled": true,
   "when": {
-    "usage.payment_status": { "neq": "expired" },
-    "usage.usage_percentage": { "gte": 100 }
+    "usage.payment_status": {
+      "neq": "expired"
+    },
+    "usage.usage_percentage": {
+      "gte": 100
+    }
   },
+  "title": "Cuota de mensajes agotada",
   "size": "md",
   "position": "center",
   "backdrop": "none",
@@ -13,5 +18,12 @@
   "persistent": true,
   "auto_close": 0,
   "priority": 50,
-  "html_file": "quota_exhausted.html"
+  "html_file": "quota_exhausted.html",
+  "actions": [
+    {
+      "label": "Ampliar plan",
+      "action": "checkout",
+      "variant": "primary"
+    }
+  ]
 }

@@ -5,6 +5,7 @@
   "when": {
     "usage.payment_status": "expired"
   },
+  "title": "Tu plan ha caducado",
   "size": "md",
   "position": "center",
   "backdrop": "blur",
@@ -12,5 +13,21 @@
   "persistent": true,
   "auto_close": 0,
   "priority": 100,
-  "html_file": "plan_expired.html"
+  "html_file": "plan_expired.html",
+  "actions": [
+    {
+      "label": "Ya lo he renovado",
+      "action": "recheck",
+      "variant": "secondary"
+    },
+    {
+      "label": "Renovar mi plan",
+      "action": "checkout",
+      "variant": "primary"
+    }
+  ],
+  "footer_link": {
+    "label": "Entrar con otra cuenta",
+    "action": "signout"
+  }
 }

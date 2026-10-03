@@ -4,69 +4,137 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Vista previa de mensajes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-  /* Vista previa para el PM: simula la ventana de la app y pinta un mensaje del repo en su contenedor.
+  /* Vista previa para el PM: simula la ventana de la app ConfAI (tema claro u oscuro) y pinta un mensaje en su contenedor.
      Sirve desde la raíz del repo: python3 -m http.server 8787 → http://localhost:8787/preview/ */
-  html,body{margin:0;height:100%;font-family:Geist,system-ui,-apple-system,sans-serif;background:#0A0A14;color:#EDEDF5}
-  .toolbar{position:fixed;top:0;left:0;right:0;z-index:10;display:flex;gap:12px;align-items:center;padding:10px 16px;background:#15152B;border-bottom:1px solid #2B2B4D;font-size:14px}
-  .toolbar select{background:#1D1D3A;color:#fff;border:1px solid #2B2B4D;border-radius:8px;padding:6px 10px;font:inherit}
-  .toolbar span{color:#9A9AB5}
-  .app{position:absolute;inset:48px 0 0 0;display:grid;grid-template-columns:240px 1fr;overflow:hidden}
-  .side{background:#121212;border-right:1px solid #222;padding:20px 14px}
-  .side div{height:14px;border-radius:7px;background:#2A2A2A;margin:0 0 14px}
-  .main{padding:28px 36px;background:#0D0D14}
-  .main .bubble{max-width:620px;border-radius:10px;background:#14142A;border:1px solid rgba(255,255,255,.08);height:70px;margin:0 0 18px}
-  .main .bubble.me{margin-left:auto;background:#1A1A2E;height:50px}
-  .blur{position:absolute;inset:0;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);background:rgba(13,13,20,.6)}
+  html,body{margin:0;height:100%;font-family:'Open Sans',system-ui,sans-serif}
+  body{background:var(--surfaceMuted);color:var(--textPrimary)}
+  .toolbar{position:fixed;top:0;left:0;right:0;z-index:10;display:flex;gap:12px;align-items:center;padding:8px 14px;background:var(--surface);border-bottom:1px solid var(--border);font-size:12.5px}
+  .toolbar select,.toolbar button{background:var(--surfaceRaised);color:var(--textPrimary);border:1px solid var(--controlBorder);border-radius:6px;padding:5px 9px;font:inherit;cursor:pointer}
+  .toolbar span{color:var(--textMuted)}
+  .app{position:absolute;inset:44px 0 0 0;display:grid;grid-template-columns:240px 1fr;overflow:hidden}
+  .side{background:var(--sidebarBg);border-right:1px solid var(--border);padding:18px 14px}
+  .side div{height:12px;border-radius:6px;background:var(--sidebarLine);margin:0 0 14px}
+  .main{padding:24px 32px}
+  .main .bubble{max-width:620px;border-radius:10px;background:var(--surface);border:1px solid var(--border);height:64px;margin:0 0 16px}
+  .main .bubble.me{margin-left:auto;background:var(--surfaceRaised);height:46px}
+  .blur{position:absolute;inset:0;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);background:var(--overlay)}
   .layer{position:absolute;inset:0;pointer-events:none}
-  .card{position:absolute;pointer-events:auto;box-shadow:0 16px 48px rgba(0,0,0,.4);border-radius:16px;max-height:calc(100% - 48px);overflow:auto}
+  .card{position:absolute;pointer-events:auto;box-shadow:0 8px 32px rgba(0,0,0,.18);border-radius:10px;max-height:calc(100% - 48px);overflow:auto}
+  .card.corner{box-shadow:0 4px 16px rgba(0,0,0,.12);border-radius:6px}
   .card.center{left:50%;top:50%;transform:translate(-50%,-50%)}
   .card.top{left:50%;top:24px;transform:translateX(-50%)}
   .card.bottom{left:50%;bottom:24px;transform:translateX(-50%)}
   .card.top-right{right:24px;top:24px}
   .card.bottom-right{right:24px;bottom:24px}
-  .card.sm{width:380px}.card.md{width:560px}.card.lg{width:760px}
-  .x{position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,0.14);background:#1A1A2E;color:#A0A0B8;font-size:18px;line-height:30px;text-align:center;cursor:pointer}
-  .meta{position:fixed;left:16px;bottom:12px;font-size:12px;color:#7F7F95;background:#15152B;border:1px solid #2B2B4D;border-radius:8px;padding:6px 10px}
+  .card.sm{width:360px}.card.md{width:460px}.card.lg{width:620px}
+  /* AppDialog */
+  .dlg{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;font-family:'Open Sans',system-ui,sans-serif}
+  .dlg .hd{position:relative;padding:20px 24px 12px 24px}
+  .dlg .hd.withx{padding-right:40px}
+  .dlg .hd h2{margin:0;font-size:13px;line-height:1.4;font-weight:600;color:var(--textHeading)}
+  .dlg .bd{padding:16px 24px 16px 24px;color:var(--textPrimary)}
+  .dlg .ft{display:flex;align-items:center;gap:10px;padding:12px 24px}
+  .dlg .ft.bar{border-top:1px solid var(--border)}
+  .dlg .ft .lead{flex:1;font-size:12.5px;font-weight:600;color:var(--brandPrimary);text-decoration:none}
+  .dlg .ft .acts{display:flex;gap:10px;margin-left:auto}
+  /* AppButton xl: 34px, bodyStrong 12.5/600, radio 6 */
+  .btn{display:inline-flex;align-items:center;height:34px;padding:0 12px;border-radius:6px;font-size:12.5px;font-weight:600;line-height:1;text-decoration:none;border:1px solid transparent;cursor:pointer;white-space:nowrap}
+  .btn.primary{background:var(--brandPrimary);color:var(--textOnAccent);box-shadow:0 1px 1px rgba(0,0,0,.1),0 0 0 1px rgba(70,79,96,.16),0 2px 5px rgba(89,96,120,.1)}
+  .btn.secondary{background:transparent;color:var(--brandPrimary);border-color:var(--accentLine)}
+  .btn.ghost{background:transparent;color:var(--textPrimary)}
+  .btn.danger{background:transparent;color:var(--danger);border-color:rgba(209,41,83,.4)}
+  .btn.sm{height:24px;padding:0 8px;font-size:11.5px}
+  /* AppBanner: borde hairline del tono, radio 6, padding 8/12, icono + bodyStrong */
+  .bnr{display:flex;gap:10px;align-items:flex-start;padding:8px 12px;border-radius:6px;border:1px solid;font-family:'Open Sans',system-ui,sans-serif;font-size:12.5px;line-height:1.5;font-weight:600}
+  .bnr .ic{flex:none;width:16px;height:16px;border-radius:50%;border:2px solid currentColor;font-size:10px;line-height:12px;text-align:center;font-weight:700;margin-top:2px}
+  .bnr .tx{flex:1;padding-right:22px}
+  .bnr .tx .btn{margin-top:8px}
+  .bnr.info{background:var(--infoSurface);color:var(--brandPrimary);border-color:var(--accentLine)}
+  .bnr.success{background:var(--successSurface);color:var(--success);border-color:var(--success)}
+  .bnr.warning{background:var(--warningSurface);color:var(--warning);border-color:var(--warning)}
+  .bnr.danger{background:var(--dangerSurface);color:var(--dangerText);border-color:var(--danger)}
+  .x{position:absolute;top:12px;right:12px;width:24px;height:24px;border-radius:6px;color:var(--textMuted);font-size:16px;line-height:24px;text-align:center;cursor:pointer}
+  .x:hover{background:var(--surfaceRaised)}
+  .meta{position:fixed;left:14px;bottom:10px;font-size:11px;color:var(--textMuted);background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:5px 9px}
 </style>
 </head>
 <body>
 <div class="toolbar">
   <strong>Vista previa</strong>
   <select id="pick"></select>
+  <button id="theme" title="Cambiar tema">Tema: claro</button>
   <span id="props"></span>
 </div>
 <div class="app">
   <div class="side"><div style="width:70%"></div><div style="width:50%"></div><div style="width:80%"></div><div style="width:60%"></div><div style="width:40%"></div></div>
-  <div class="main"><div class="bubble"></div><div class="bubble me"></div><div class="bubble" style="height:110px"></div><div class="bubble me"></div><div class="bubble"></div></div>
+  <div class="main"><div class="bubble"></div><div class="bubble me"></div><div class="bubble" style="height:100px"></div><div class="bubble me"></div><div class="bubble"></div></div>
 </div>
 <div id="blur" class="blur" hidden></div>
 <div class="layer"><div id="card" class="card"></div></div>
 <div class="meta" id="meta"></div>
 <script>
+// AppSemanticColors.light / .dark de la app (lib/src/theme/design_system/app_semantic_colors.dart)
+const THEMES = {
+  light: { brandPrimary:'#7D67C0', brandHover:'#6A55A8', accentSoft:'rgba(125,103,192,0.08)', accentLine:'rgba(125,103,192,0.55)', textOnAccent:'#FFFFFF',
+    surface:'#FFFFFF', surfaceMuted:'#F4F7FC', surfaceRaised:'#FBFCFE', textPrimary:'#1F2937', textHeading:'#374151', textSecondary:'#4B5563', textMuted:'#6B7280', textTertiary:'#9CA3AF',
+    border:'#E9EDF5', divider:'#EEF1F6', controlBorder:'#C3C3C3', controlFill:'#FBFCFE', success:'#14804A', successSurface:'#E1FCEF', warning:'#D97706', warningSurface:'#FDF6E7',
+    danger:'#D12953', dangerText:'#B31F45', dangerSurface:'#FAF0F3', infoSurface:'rgba(125,103,192,0.08)', overlay:'rgba(30,30,30,0.4)', sidebarBg:'#F9F9F9', sidebarLine:'#E5E7EB' },
+  dark: { brandPrimary:'#7D67C0', brandHover:'#6A55A8', accentSoft:'rgba(125,103,192,0.08)', accentLine:'rgba(125,103,192,0.55)', textOnAccent:'#FFFFFF',
+    surface:'#1B1B1F', surfaceMuted:'#16161A', surfaceRaised:'#232329', textPrimary:'#F2F3F5', textHeading:'#C9CDD6', textSecondary:'#B8BDC9', textMuted:'#9BA3B3', textTertiary:'#868FA0',
+    border:'#2D2D33', divider:'#26262B', controlBorder:'#3A3A42', controlFill:'#232329', success:'#3FBE7E', successSurface:'#13301F', warning:'#F59E0B', warningSurface:'#3A2A0C',
+    danger:'#F06A8B', dangerText:'#F06A8B', dangerSurface:'#351A22', infoSurface:'rgba(125,103,192,0.08)', overlay:'rgba(0,0,0,0.6)', sidebarBg:'#121212', sidebarLine:'#2A2A2A' },
+};
 const VARS = { user_name: 'Laura', plan_name: 'Trial', plan_end_date: '2 de octubre de 2026', days_left: '2', usage_percentage: '104' };
 const q = new URLSearchParams(location.search);
+let theme = q.get('theme') === 'dark' ? 'dark' : 'light';
+let current = null;
+function applyTheme() {
+  const t = THEMES[theme];
+  for (const [k, v] of Object.entries(t)) document.documentElement.style.setProperty('--' + k, v);
+  document.getElementById('theme').textContent = 'Tema: ' + (theme === 'dark' ? 'oscuro' : 'claro');
+}
 async function load(id) {
+  current = id;
   const idx = await (await fetch('../index.json')).json();
   const m = await (await fetch('../' + idx.messages[id])).json();
   let html = m.html ?? await (await fetch('../messages/' + m.html_file)).text();
-  html = html.replace(/\{\{\s*([a-z_]+)\s*\}\}/g, (_, k) => VARS[k] ?? '').replaceAll('https://raw.githubusercontent.com/GravitonAI-dev/app-messages/main/', '../');
+  const t = THEMES[theme];
+  html = html.replace(/\{\{\s*([a-zA-Z_.]+)\s*\}\}/g, (_, k) => k.startsWith('c.') ? (t[k.slice(2)] ?? 'magenta') : (VARS[k] ?? ''))
+             .replaceAll('https://raw.githubusercontent.com/GravitonAI-dev/app-messages/main/', '../');
   const card = document.getElementById('card');
   card.className = 'card ' + m.position + ' ' + (typeof m.size === 'number' ? '' : m.size);
-  if (typeof m.size === 'number') card.style.width = m.size + 'px'; else card.style.width = '';
-  card.innerHTML = html + (m.dismissible ? '<div class="x" title="Cerrar">×</div>' : '');
+  card.style.width = typeof m.size === 'number' ? m.size + 'px' : '';
+  const esc = (x) => String(x).replace(/[&<>"]/g, (ch) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+  const act = (a, extra = '') => `<a class="btn ${a.variant ?? 'primary'}${extra}" href="confai://${a.action}${a.action === 'url' ? '?u=' + encodeURIComponent(a.url) : ''}">${esc(a.label)}</a>`;
+  const corner = m.position === 'top-right' || m.position === 'bottom-right';
+  if (corner) {
+    card.classList.add('corner');
+    card.innerHTML = `<div class="bnr ${m.tone ?? 'info'}"><span class="ic">i</span><div class="tx">${html}${(m.actions ?? []).map(a => '<br>' + act(a, ' sm')).join('')}</div>${m.dismissible ? '<div class="x" title="Cerrar">×</div>' : ''}</div>`;
+  } else {
+    const hasFooter = (m.actions && m.actions.length) || m.footer_link;
+    card.innerHTML = `<div class="dlg">
+      <div class="hd${m.dismissible ? ' withx' : ''}"><h2>${esc(m.title ?? '')}</h2>${m.dismissible ? '<div class="x" title="Cerrar">×</div>' : ''}</div>
+      <div class="bd">${html}</div>
+      ${hasFooter ? `<div class="ft${m.footer_link ? ' bar' : ''}">${m.footer_link ? act({...m.footer_link, variant: 'lead'}).replace('class="btn lead"', 'class="lead"') : ''}<div class="acts">${(m.actions ?? []).map(a => act(a)).join('')}</div></div>` : ''}
+    </div>`;
+  }
   document.getElementById('blur').hidden = m.backdrop !== 'blur';
-  document.getElementById('props').textContent = `${m.size} · ${m.position} · ${m.backdrop} · ${m.dismissible ? 'con X' : 'sin X'} · ${m.persistent ? 'persistente' : 'una vez'}${m.auto_close ? ' · se cierra a los ' + m.auto_close + ' s' : ''} · prioridad ${m.priority}`;
+  document.getElementById('props').textContent = `${corner ? 'AppBanner' : 'AppDialog'} · ${m.size} · ${m.position} · ${m.backdrop} · ${m.dismissible ? 'con X' : 'sin X'} · ${m.persistent ? 'persistente' : 'una vez'}${m.auto_close ? ' · se cierra a los ' + m.auto_close + ' s' : ''} · prioridad ${m.priority}`;
   document.getElementById('meta').textContent = 'when: ' + JSON.stringify(m.when);
   card.querySelectorAll('a[href^="confai://"]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); document.getElementById('meta').textContent = 'acción: ' + a.getAttribute('href'); }));
-  history.replaceState(null, '', '?m=' + id);
+  history.replaceState(null, '', `?m=${id}&theme=${theme}`);
 }
 (async () => {
+  applyTheme();
   const idx = await (await fetch('../index.json')).json();
   const pick = document.getElementById('pick');
   for (const id of Object.keys(idx.messages)) pick.append(new Option(id, id));
   pick.value = q.get('m') && idx.messages[q.get('m')] ? q.get('m') : Object.keys(idx.messages)[0];
   pick.addEventListener('change', () => load(pick.value));
+  document.getElementById('theme').addEventListener('click', () => { theme = theme === 'dark' ? 'light' : 'dark'; applyTheme(); load(current); });
   load(pick.value);
 })();
 </script>

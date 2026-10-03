@@ -2,40 +2,206 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Mensaje remoto de la app ConfAI",
   "type": "object",
-  "required": ["schema_version", "id", "when", "size", "position", "backdrop", "dismissible", "persistent", "priority"],
+  "required": [
+    "schema_version",
+    "id",
+    "when",
+    "size",
+    "position",
+    "backdrop",
+    "dismissible",
+    "persistent",
+    "priority"
+  ],
   "additionalProperties": false,
   "properties": {
-    "schema_version": { "const": 1 },
-    "id": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
-    "enabled": { "type": "boolean", "default": true },
+    "schema_version": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "enabled": {
+      "type": "boolean",
+      "default": true
+    },
     "when": {
       "type": "object",
       "description": "Condiciones sobre el contexto (usage.*, membership.*, app.*). Todas deben cumplirse. Valor directo = igualdad; objeto = operadores eq, neq, gt, gte, lt, lte, in, exists.",
       "additionalProperties": {
         "oneOf": [
-          { "type": ["string", "number", "boolean", "null"] },
+          {
+            "type": [
+              "string",
+              "number",
+              "boolean",
+              "null"
+            ]
+          },
           {
             "type": "object",
             "additionalProperties": false,
             "properties": {
-              "eq": {}, "neq": {},
-              "gt": { "type": "number" }, "gte": { "type": "number" },
-              "lt": { "type": "number" }, "lte": { "type": "number" },
-              "in": { "type": "array" },
-              "exists": { "type": "boolean" }
+              "eq": {},
+              "neq": {},
+              "gt": {
+                "type": "number"
+              },
+              "gte": {
+                "type": "number"
+              },
+              "lt": {
+                "type": "number"
+              },
+              "lte": {
+                "type": "number"
+              },
+              "in": {
+                "type": "array"
+              },
+              "exists": {
+                "type": "boolean"
+              }
             }
           }
         ]
       }
     },
-    "size": { "oneOf": [ { "enum": ["sm", "md", "lg"] }, { "type": "integer", "minimum": 240, "maximum": 1200 } ] },
-    "position": { "enum": ["center", "top", "bottom", "top-right", "bottom-right"] },
-    "backdrop": { "enum": ["blur", "none"] },
-    "dismissible": { "type": "boolean" },
-    "persistent": { "type": "boolean" },
-    "auto_close": { "type": "integer", "minimum": 0, "default": 0 },
-    "priority": { "type": "integer", "minimum": 0, "maximum": 1000 },
-    "html_file": { "type": "string", "pattern": "^[a-z0-9_]+\\.html$" },
-    "html": { "type": "string" }
+    "size": {
+      "oneOf": [
+        {
+          "enum": [
+            "sm",
+            "md",
+            "lg"
+          ]
+        },
+        {
+          "type": "integer",
+          "minimum": 240,
+          "maximum": 1200
+        }
+      ]
+    },
+    "position": {
+      "enum": [
+        "center",
+        "top",
+        "bottom",
+        "top-right",
+        "bottom-right"
+      ]
+    },
+    "backdrop": {
+      "enum": [
+        "blur",
+        "none"
+      ]
+    },
+    "dismissible": {
+      "type": "boolean"
+    },
+    "persistent": {
+      "type": "boolean"
+    },
+    "auto_close": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 0
+    },
+    "priority": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1000
+    },
+    "html_file": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+\\.html$"
+    },
+    "html": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string",
+      "description": "Título del AppDialog (obligatorio en mensajes centrados)"
+    },
+    "tone": {
+      "enum": [
+        "info",
+        "success",
+        "warning",
+        "danger"
+      ],
+      "description": "Tono del AppBanner (obligatorio en mensajes de esquina)"
+    },
+    "actions": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "required": [
+          "label",
+          "action"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "action": {
+            "enum": [
+              "checkout",
+              "url",
+              "recheck",
+              "dismiss",
+              "signout"
+            ]
+          },
+          "url": {
+            "type": "string",
+            "pattern": "^https://"
+          },
+          "variant": {
+            "enum": [
+              "primary",
+              "secondary",
+              "ghost",
+              "danger"
+            ],
+            "default": "primary"
+          }
+        }
+      },
+      "description": "Botones del pie (AppButton), en orden de izquierda a derecha"
+    },
+    "footer_link": {
+      "type": "object",
+      "required": [
+        "label",
+        "action"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "action": {
+          "enum": [
+            "checkout",
+            "url",
+            "recheck",
+            "dismiss",
+            "signout"
+          ]
+        },
+        "url": {
+          "type": "string",
+          "pattern": "^https://"
+        }
+      },
+      "description": "Enlace a la izquierda del pie (AppLink)"
+    }
   }
 }

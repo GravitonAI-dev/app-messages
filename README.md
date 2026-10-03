@@ -13,7 +13,7 @@ https://raw.githubusercontent.com/GravitonAI-dev/app-messages/main/
 1. La app consulta el estado de la cuenta (telemetría `/api/user-usage` y billing `userInfo`) y construye un contexto con campos como `usage.payment_status` o `membership.days_left`.
 2. Descarga `index.json` y cada `messages/<id>.json`.
 3. Para cada mensaje evalúa su `when` contra el contexto. Los que cumplen se muestran, ordenados por `priority`.
-4. Pinta cada uno en su contenedor (tamaño, posición, blur, X) con el HTML de `messages/<id>.html` dentro, sustituyendo las variables.
+4. Pinta cada uno con los componentes del design system de la app: los centrados son un `AppDialog` (título del JSON en la cabecera, X si se puede cerrar, el HTML como cuerpo, `AppButton` en el pie y `AppLink` a la izquierda del pie); los de esquina son un `AppBanner` (tono, icono, el HTML como texto y un botón pequeño). Blur, tamaño y posición los pone el envoltorio.
 
 Regla fija de la app, no configurable desde aquí: si telemetría devuelve `payment_status: expired`, la app bloquea con blur siempre, aunque no consiga descargar nada. Dentro del blur pinta el mensaje bloqueante de mayor prioridad que cumpla su `when` (`trial_expired` o `plan_expired`) y, si no tiene ninguno, un mensaje embebido por defecto.
 
@@ -23,9 +23,9 @@ Regla fija de la app, no configurable desde aquí: si telemetría devuelve `paym
 index.json                 qué mensajes existen y dónde están
 messages/<id>.json         propiedades del contenedor + condición
 messages/<id>.html         el contenido
-templates/card.html        tarjeta base con el estilo de la web de ConfAI (tokens de globals.css)
+templates/card.html        cuerpo de ejemplo con los patrones del design system de la app
 assets/logo.png            logo de la app, referenciado desde el HTML
-templates/tones.md         tokens de la web y color de cada tono (brand, error, warning, info, success)
+templates/tones.md         roles de color {{c.*}} (claro/oscuro), tonos y medidas del design system
 schema/message.schema.json esquema del JSON de un mensaje
 scripts/validate.mjs       validador (lo ejecuta la CI en cada push)
 preview/index.html         vista previa: simula la app y pinta un mensaje en su contenedor
@@ -58,6 +58,15 @@ fixtures/contexts/*.json   contextos de prueba con el resultado esperado (node s
 3. Añádelo a `index.json`: `"mi_mensaje": "messages/mi_mensaje.json"`.
 4. `node scripts/validate.mjs` (o espera a la CI). En verde, merge a `main` y listo.
 
+## Qué va en el JSON y qué en el HTML
+
+| En el JSON (lo pinta el design system) | En el HTML (cuerpo) |
+|---|---|
+| `title`: título del AppDialog | párrafos, negritas, panel de datos (tabla), tile del icono |
+| `actions`: 1 a 3 botones `{label, action, url?, variant}` → AppButton (`primary`, `secondary`, `ghost`, `danger`) | ningún botón ni enlace `confai://` |
+| `footer_link`: `{label, action}` → AppLink a la izquierda del pie | colores solo como `{{c.<rol>}}` |
+| `tone` (`info`, `success`, `warning`, `danger`): solo en mensajes de esquina (AppBanner) | |
+
 ## Campos del contenedor
 
 | Campo | Valores | Qué hace |
@@ -70,6 +79,10 @@ fixtures/contexts/*.json   contextos de prueba con el resultado esperado (node s
 | `auto_close` | segundos, `0` = no | Se cierra solo (solo con `dismissible: true`). Cuenta como cierre: con `persistent: false` no vuelve a salir |
 | `priority` | 0-1000 | Si coinciden varios, el más alto primero. Si hay uno con blur visible, los demás esperan |
 | `enabled` | `true`, `false` | Apagar un mensaje sin borrarlo |
+| `title` | texto | Título del AppDialog. Obligatorio en mensajes centrados |
+| `tone` | `info`, `success`, `warning`, `danger` | Color e icono del AppBanner. Obligatorio en mensajes de esquina |
+| `actions` | lista de 1 a 3 `{label, action, url?, variant}` | Botones del pie, de izquierda a derecha. El primario a la derecha |
+| `footer_link` | `{label, action}` | Enlace a la izquierda del pie |
 
 Un mensaje con blur y sin X debe ser `persistent: true`.
 
@@ -103,33 +116,35 @@ Estilos en línea: `color background background-color font-size font-weight font
 
 Sin `<script>`, sin `<style>`, sin `on*=`, sin flex ni grid, sin CSS externo. Las imágenes solo por `https://`.
 
-## Botones
+## Acciones
 
-Un botón es un enlace con esquema propio:
+Van en `actions` y `footer_link` del JSON, nunca como enlaces en el HTML:
 
-| href | Acción |
+| action | Qué hace |
 |---|---|
-| `confai://checkout` | Abre la web de suscripción con la sesión del usuario |
-| `confai://url?u=<url https codificada>` | Abre la URL en el navegador |
-| `confai://recheck` | Vuelve a comprobar el estado de la cuenta ahora |
-| `confai://dismiss` | Cierra el mensaje |
-| `confai://signout` | Cierra la sesión |
+| `checkout` | Abre la web de suscripción con la sesión del usuario |
+| `url` (+ `url`) | Abre la URL https en el navegador |
+| `recheck` | Vuelve a comprobar el estado de la cuenta ahora |
+| `dismiss` | Cierra el mensaje |
+| `signout` | Cierra la sesión |
 
-Un `https://` normal también abre el navegador.
+En el HTML solo se admiten enlaces `https://` normales dentro del texto.
 
 ## Variables
 
 La app las sustituye antes de pintar: `{{user_name}}`, `{{plan_name}}`, `{{plan_end_date}}`, `{{days_left}}`, `{{usage_percentage}}`.
 
+Y los colores: `{{c.<rol>}}` se resuelve con `context.colors` del tema activo (claro u oscuro). Roles y valores en `templates/tones.md`. El validador rechaza colores fijos en `color`, `background` y `border`.
+
 ## Vista previa
 
-Para ver un mensaje tal y como lo pintará la app (blur, posición, tamaño, X) sin compilar nada:
+Para ver un mensaje tal y como lo pintará la app (AppDialog o AppBanner, blur, posición, tamaño, tema claro u oscuro) sin compilar nada:
 
 ```
 python3 -m http.server 8787
 ```
 
-y abrir http://localhost:8787/preview/?m=trial_expired. El desplegable cambia de mensaje; los botones `confai://` muestran la acción abajo a la izquierda en lugar de ejecutarla.
+y abrir http://localhost:8787/preview/?m=trial_expired (añade `&theme=dark` para el tema oscuro). El desplegable cambia de mensaje; los botones `confai://` muestran la acción abajo a la izquierda en lugar de ejecutarla.
 
 ## Evaluador de referencia y fixtures
 
@@ -144,8 +159,8 @@ node scripts/test-fixtures.mjs
 
 | id | Cuándo | Marco | Tono |
 |---|---|---|---|
-| `trial_expired` | telemetría dice `expired` y el plan era el Trial | centro, blur, persistente, sin X; gana a `plan_expired` | morado |
-| `plan_expired` | telemetría dice `expired` (plan de pago) | centro, blur, persistente, sin X | rojo |
-| `quota_exhausted` | uso ≥ 100 % con plan vigente | centro, sin blur, con X, vuelve mientras dure | ámbar |
-| `purchase_success` | plan de pago con menos de 24 h | centro, blur, con X, una sola vez | morado |
-| `trial_ending_soon` | trial con 2 días o menos | abajo derecha, sin blur, con X, se cierra a los 10 s | azul |
+| `trial_expired` | telemetría dice `expired` y el plan era el Trial | AppDialog, blur, persistente, sin X; gana a `plan_expired` | brand |
+| `plan_expired` | telemetría dice `expired` (plan de pago) | AppDialog, blur, persistente, sin X | danger |
+| `quota_exhausted` | uso ≥ 100 % con plan vigente | AppDialog, sin blur, con X, vuelve mientras dure | warning |
+| `purchase_success` | plan de pago con menos de 24 h | AppDialog, blur, con X, una sola vez | success |
+| `trial_ending_soon` | trial con 2 días o menos | AppBanner abajo a la derecha, con X, se cierra a los 10 s | info |

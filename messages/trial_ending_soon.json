@@ -4,9 +4,15 @@
   "enabled": true,
   "when": {
     "membership.plan_code": "free_plan",
-    "usage.payment_status": { "neq": "expired" },
-    "membership.days_left": { "gte": 0, "lte": 2 }
+    "usage.payment_status": {
+      "neq": "expired"
+    },
+    "membership.days_left": {
+      "gte": 0,
+      "lte": 2
+    }
   },
+  "tone": "info",
   "size": "sm",
   "position": "bottom-right",
   "backdrop": "none",
@@ -14,5 +20,12 @@
   "persistent": false,
   "auto_close": 10,
   "priority": 20,
-  "html_file": "trial_ending_soon.html"
+  "html_file": "trial_ending_soon.html",
+  "actions": [
+    {
+      "label": "Ver planes",
+      "action": "checkout",
+      "variant": "primary"
+    }
+  ]
 }

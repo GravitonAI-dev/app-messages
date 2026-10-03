@@ -6,6 +6,7 @@
     "usage.payment_status": "expired",
     "membership.plan_code": "free_plan"
   },
+  "title": "Tu prueba ha terminado",
   "size": "md",
   "position": "center",
   "backdrop": "blur",
@@ -13,5 +14,21 @@
   "persistent": true,
   "auto_close": 0,
   "priority": 110,
-  "html_file": "trial_expired.html"
+  "html_file": "trial_expired.html",
+  "actions": [
+    {
+      "label": "Ya he contratado un plan",
+      "action": "recheck",
+      "variant": "secondary"
+    },
+    {
+      "label": "Elegir mi plan",
+      "action": "checkout",
+      "variant": "primary"
+    }
+  ],
+  "footer_link": {
+    "label": "Entrar con otra cuenta",
+    "action": "signout"
+  }
 }

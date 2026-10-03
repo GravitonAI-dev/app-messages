@@ -1,27 +1,18 @@
-<!-- trial_expired · fin de la prueba gratuita · tono brand. Centrado, blur, persistente, sin X. Gana a plan_expired (priority 110) cuando el plan era el Trial. Estilo: tokens de la web (bg-card, cai-border, .btn, Geist). -->
-<div style="background:#14142A;border:1px solid rgba(255,255,255,0.08);border-radius:16px;color:#F1F1F4;font-family:Geist,system-ui,-apple-system,'Segoe UI',sans-serif;padding:32px 36px 28px 36px;">
-  <p style="margin:0 0 20px 0;text-align:center;">
-    <img src="https://raw.githubusercontent.com/GravitonAI-dev/app-messages/main/assets/logo.png" alt="ConfAI" width="32" height="40" style="vertical-align:middle;margin:0 8px 0 0;"><span style="vertical-align:middle;font-size:22px;font-weight:700;letter-spacing:-0.02em;color:#F1F1F4;">Conf<span style="color:#9B8FD4;">AI</span></span>
-  </p>
-  <p style="margin:0 0 12px 0;text-align:center;"><span style="display:inline-block;background:rgba(125,103,192,0.15);color:#9B8FD4;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:4px 12px;border-radius:999px;">Prueba gratuita finalizada</span></p>
-  <h1 style="margin:0 0 12px 0;text-align:center;font-size:28px;line-height:1.15;letter-spacing:-0.02em;font-weight:800;color:#F1F1F4;">Tus 7 días de prueba han terminado</h1>
-  <p style="margin:0 0 22px 0;text-align:center;font-size:15px;line-height:1.6;color:#A0A0B8;">Hola, <strong style="color:#F1F1F4;">{{user_name}}</strong>. Tu prueba de ConfAI acabó el <strong style="color:#F1F1F4;">{{plan_end_date}}</strong>. Todo lo que has creado sigue guardado: tus documentos, clientes y librerías te esperan en cuanto elijas un plan.</p>
-  <table style="width:100%;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:2px 20px;margin:0 0 22px 0;">
-    <tr>
-      <td style="padding:12px 0;text-align:left;"><strong style="font-size:16px;font-weight:700;color:#F1F1F4;letter-spacing:-0.005em;">Confidential</strong><br><span style="font-size:13px;line-height:1.5;color:#9090A8;">Para trabajar a diario con IA privada</span></td>
-      <td style="padding:12px 0;text-align:right;"><span style="font-size:22px;font-weight:600;letter-spacing:-0.02em;color:#F1F1F4;">34,90</span><span style="font-size:13px;color:#9090A8;"> €/mes</span></td>
-    </tr>
-    <tr>
-      <td style="padding:12px 0;text-align:left;border-top:1px solid rgba(255,255,255,0.08);"><strong style="font-size:16px;font-weight:700;color:#9B8FD4;letter-spacing:-0.005em;">Extended</strong> <span style="display:inline-block;background:#7D67C0;color:#FFFFFF;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:2px 8px;border-radius:999px;margin:0 0 0 6px;vertical-align:middle;">Más popular</span><br><span style="font-size:13px;line-height:1.5;color:#9090A8;">Más capacidad para equipos exigentes</span></td>
-      <td style="padding:12px 0;text-align:right;border-top:1px solid rgba(255,255,255,0.08);"><span style="font-size:22px;font-weight:600;letter-spacing:-0.02em;color:#F1F1F4;">59</span><span style="font-size:13px;color:#9090A8;"> €/mes</span></td>
-    </tr>
-    <tr>
-      <td style="padding:12px 0;text-align:left;border-top:1px solid rgba(255,255,255,0.08);"><strong style="font-size:16px;font-weight:700;color:#F1F1F4;letter-spacing:-0.005em;">Abogados</strong><br><span style="font-size:13px;line-height:1.5;color:#9090A8;">Procedimientos y plantillas legales incluidos</span></td>
-      <td style="padding:12px 0;text-align:right;border-top:1px solid rgba(255,255,255,0.08);"><span style="font-size:22px;font-weight:600;letter-spacing:-0.02em;color:#F1F1F4;">94,90</span><span style="font-size:13px;color:#9090A8;"> €/mes</span></td>
-    </tr>
-  </table>
-  <p style="margin:0 0 10px 0;text-align:center;"><a href="confai://checkout" style="display:inline-block;background:#7D67C0;color:#FFFFFF;text-decoration:none;font-weight:600;font-size:16px;line-height:1;padding:14px 36px;border-radius:6px;">Elegir mi plan</a></p>
-  <p style="margin:0 0 18px 0;text-align:center;"><a href="confai://recheck" style="display:inline-block;background:rgba(125,103,192,0.14);color:#9B8FD4;border:1px solid rgba(125,103,192,0.55);text-decoration:none;font-weight:600;font-size:14px;line-height:1;padding:11px 24px;border-radius:6px;">Ya he contratado un plan</a></p>
-  <p style="margin:0 0 4px 0;text-align:center;font-size:13px;line-height:1.5;color:#9090A8;">Pago seguro con Stripe. Puedes cancelar cuando quieras.</p>
-  <p style="margin:0 0 0px 0;text-align:center;font-size:13px;line-height:1.5;color:#9090A8;">¿No es tu cuenta? <a href="confai://signout" style="color:#9B8FD4;text-decoration:underline;">Entrar con otra cuenta</a></p>
-</div>
+<!-- trial_expired · cuerpo del AppDialog (título y botones van en el JSON). Patrón AppEmptyState (tile + encabezado + texto) y panel de datos. -->
+<p style="margin:0 0 12px 0;text-align:center;"><span style="display:inline-block;width:44px;height:44px;line-height:44px;background:{{c.surfaceRaised}};border:1px solid {{c.border}};border-radius:10px;text-align:center;"><img src="https://raw.githubusercontent.com/GravitonAI-dev/app-messages/main/assets/logo.png" alt="ConfAI" width="19" height="24" style="vertical-align:middle;"></span></p>
+<p style="margin:0 0 4px 0;text-align:center;font-size:13px;line-height:1.4;font-weight:600;color:{{c.textHeading}};">Tus 7 días de prueba de ConfAI han acabado</p>
+<p style="margin:0 0 14px 0;text-align:center;font-size:12.5px;line-height:1.5;color:{{c.textSecondary}};">Hola, <strong style="color:{{c.textPrimary}};">{{user_name}}</strong>. La prueba terminó el <strong style="color:{{c.textPrimary}};">{{plan_end_date}}</strong>. Todo lo que has creado sigue guardado: tus documentos, clientes y librerías te esperan en cuanto elijas un plan.</p>
+<table style="width:100%;background:{{c.surfaceRaised}};border:1px solid {{c.border}};border-radius:10px;padding:2px 12px;margin:0;">
+  <tr>
+    <td style="padding:8px 0;text-align:left;"><strong style="font-size:13px;font-weight:600;color:{{c.textPrimary}};">Confidential</strong><br><span style="font-size:11.5px;line-height:1.45;color:{{c.textTertiary}};">Para trabajar a diario con IA privada</span></td>
+    <td style="padding:8px 0;text-align:right;"><span style="font-size:15px;font-weight:700;color:{{c.textPrimary}};">34,90</span><span style="font-size:11.5px;color:{{c.textTertiary}};"> €/mes</span></td>
+  </tr>
+  <tr>
+    <td style="padding:8px 0;text-align:left;border-top:1px solid {{c.divider}};"><strong style="font-size:13px;font-weight:600;color:{{c.textPrimary}};">Extended</strong> <span style="display:inline-block;background:{{c.accentSoft}};color:{{c.brandPrimary}};font-size:9.5px;font-weight:600;letter-spacing:0.6px;text-transform:uppercase;line-height:1.4;padding:2px 6px;border-radius:6px;margin:0 0 0 6px;vertical-align:middle;">Más popular</span><br><span style="font-size:11.5px;line-height:1.45;color:{{c.textTertiary}};">Más capacidad para equipos exigentes</span></td>
+    <td style="padding:8px 0;text-align:right;border-top:1px solid {{c.divider}};"><span style="font-size:15px;font-weight:700;color:{{c.textPrimary}};">59</span><span style="font-size:11.5px;color:{{c.textTertiary}};"> €/mes</span></td>
+  </tr>
+  <tr>
+    <td style="padding:8px 0;text-align:left;border-top:1px solid {{c.divider}};"><strong style="font-size:13px;font-weight:600;color:{{c.textPrimary}};">Abogados</strong><br><span style="font-size:11.5px;line-height:1.45;color:{{c.textTertiary}};">Procedimientos y plantillas legales incluidos</span></td>
+    <td style="padding:8px 0;text-align:right;border-top:1px solid {{c.divider}};"><span style="font-size:15px;font-weight:700;color:{{c.textPrimary}};">94,90</span><span style="font-size:11.5px;color:{{c.textTertiary}};"> €/mes</span></td>
+  </tr>
+</table>
