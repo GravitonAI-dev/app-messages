@@ -27,6 +27,8 @@ templates/card.html        tarjeta base con el estilo de los correos de ConfAI
 templates/tones.md         colores de cada tono (rojo, ámbar, azul, verde, morado, gris)
 schema/message.schema.json esquema del JSON de un mensaje
 scripts/validate.mjs       validador (lo ejecuta la CI en cada push)
+scripts/evaluate.mjs       evaluador de referencia: contexto → mensajes visibles (la app debe dar lo mismo)
+fixtures/contexts/*.json   contextos de prueba con el resultado esperado (node scripts/test-fixtures.mjs)
 ```
 
 ## Crear un mensaje
@@ -116,6 +118,15 @@ Un `https://` normal también abre el navegador.
 ## Variables
 
 La app las sustituye antes de pintar: `{{user_name}}`, `{{plan_name}}`, `{{plan_end_date}}`, `{{days_left}}`, `{{usage_percentage}}`.
+
+## Evaluador de referencia y fixtures
+
+`scripts/evaluate.mjs` implementa la semántica exacta de `when`, `enabled`, `persistent`, cierres y prioridad. La app debe reproducirla. `fixtures/contexts/` tiene un contexto por situación (caducado, cuota agotada, compra reciente, trial a dos días, cuenta sana, sin métricas) con el resultado esperado; sirven como casos de test para la app.
+
+```
+node scripts/evaluate.mjs fixtures/contexts/expired.json
+node scripts/test-fixtures.mjs
+```
 
 ## Mensajes actuales
 

@@ -1,0 +1,10 @@
+{
+  "description": "Plan de pago vigente con la cuota agotada",
+  "context": {
+    "usage.payment_status": "paid", "usage.usage_percentage": 104.2, "usage.has_constraints": true, "usage.used": 5210000, "usage.limit": 5000000,
+    "membership.payment_status": "paid", "membership.plan_code": "basic_plan", "membership.plan_name": "Confidential",
+    "membership.created_at": "2026-09-01T10:00:00Z", "membership.max_days": null, "membership.expires_at": null,
+    "membership.days_left": null, "membership.hours_since_start": 770, "app.version": "1.4.2", "app.platform": "windows"
+  },
+  "expected": { "forced_block": false, "visible_now": ["quota_exhausted"], "queue": ["quota_exhausted"] }
+}

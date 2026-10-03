@@ -1,0 +1,10 @@
+{
+  "description": "Acaba de pagar un plan (3 horas): sale la tarjeta de compra; cerrada una vez, no vuelve",
+  "context": {
+    "usage.payment_status": "paid", "usage.usage_percentage": 0, "usage.has_constraints": true,
+    "membership.payment_status": "paid", "membership.plan_code": "pro_plan", "membership.plan_name": "Extended",
+    "membership.created_at": "2026-10-03T15:00:00Z", "membership.max_days": null, "membership.expires_at": null,
+    "membership.days_left": null, "membership.hours_since_start": 3, "app.version": "1.4.2", "app.platform": "macos"
+  },
+  "expected": { "forced_block": false, "visible_now": ["purchase_success"], "queue": ["purchase_success"] }
+}

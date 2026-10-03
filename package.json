@@ -4,7 +4,8 @@
   "description": "Mensajes remotos de la app ConfAI",
   "type": "module",
   "scripts": {
-    "validate": "node scripts/validate.mjs"
+    "validate": "node scripts/validate.mjs",
+    "test": "node scripts/test-fixtures.mjs"
   },
   "engines": { "node": ">=20" }
 }
