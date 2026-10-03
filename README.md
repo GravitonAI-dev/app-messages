@@ -62,7 +62,7 @@ fixtures/contexts/*.json   contextos de prueba con el resultado esperado (node s
 
 | En el JSON (lo pinta el design system) | En el HTML (cuerpo) |
 |---|---|
-| `title`: título del AppDialog | párrafos, negritas, panel de datos (tabla), tile del icono |
+| `title`: título del AppDialog (opcional) | párrafos, negritas, panel de datos (tabla), tile del icono, encabezado del cuerpo |
 | `actions`: 1 a 3 botones `{label, action, url?, variant}` → AppButton (`primary`, `secondary`, `ghost`, `danger`) | ningún botón ni enlace `confai://` |
 | `footer_link`: `{label, action}` → AppLink a la izquierda del pie | colores solo como `{{c.<rol>}}` |
 | `tone` (`info`, `success`, `warning`, `danger`): solo en mensajes de esquina (AppBanner) | |
@@ -79,7 +79,7 @@ fixtures/contexts/*.json   contextos de prueba con el resultado esperado (node s
 | `auto_close` | segundos, `0` = no | Se cierra solo (solo con `dismissible: true`). Cuenta como cierre: con `persistent: false` no vuelve a salir |
 | `priority` | 0-1000 | Si coinciden varios, el más alto primero. Si hay uno con blur visible, los demás esperan |
 | `enabled` | `true`, `false` | Apagar un mensaje sin borrarlo |
-| `title` | texto | Título del AppDialog. Obligatorio en mensajes centrados |
+| `title` | texto | Título en la cabecera del AppDialog. Opcional: sin él, el diálogo no tiene cabecera y el cuerpo lleva su propio encabezado |
 | `tone` | `info`, `success`, `warning`, `danger` | Color e icono del AppBanner. Obligatorio en mensajes de esquina |
 | `actions` | lista de 1 a 3 `{label, action, url?, variant}` | Botones del pie, de izquierda a derecha. El primario a la derecha |
 | `footer_link` | `{label, action}` | Enlace a la izquierda del pie |

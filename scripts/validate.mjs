@@ -81,7 +81,7 @@ function validateMessage(code, file) {
   if (m.auto_close > 0 && m.dismissible === false) fail(where, 'auto_close solo tiene sentido con dismissible: true');
 
   const corner = CORNER.includes(m.position);
-  if (!corner && (typeof m.title !== 'string' || !m.title.trim())) fail(where, 'los mensajes centrados son un AppDialog y necesitan "title"');
+  if ('title' in m && (typeof m.title !== 'string' || !m.title.trim())) fail(where, 'title debe ser un texto no vacío (o no ponerlo: AppDialog sin cabecera)');
   if (corner && m.backdrop === 'blur') fail(where, 'un mensaje de esquina (AppBanner) no lleva blur');
   if (corner && !TONES.includes(m.tone)) fail(where, `los mensajes de esquina son un AppBanner y necesitan "tone" (${TONES.join(', ')})`);
   if ('tone' in m && !TONES.includes(m.tone)) fail(where, `tone "${m.tone}" inválido`);

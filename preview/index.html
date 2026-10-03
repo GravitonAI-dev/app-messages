@@ -36,6 +36,7 @@
   .dlg .hd.withx{padding-right:40px}
   .dlg .hd h2{margin:0;font-size:13px;line-height:1.4;font-weight:600;color:var(--textHeading)}
   .dlg .bd{padding:16px 24px 16px 24px;color:var(--textPrimary)}
+  .dlg .bd.nohd{padding-top:24px}
   .dlg .ft{display:flex;align-items:center;gap:10px;padding:12px 24px}
   .dlg .ft.bar{border-top:1px solid var(--border)}
   .dlg .ft .lead{flex:1;font-size:12.5px;font-weight:600;color:var(--brandPrimary);text-decoration:none}
@@ -116,8 +117,8 @@ async function load(id) {
   } else {
     const hasFooter = (m.actions && m.actions.length) || m.footer_link;
     card.innerHTML = `<div class="dlg">
-      <div class="hd${m.dismissible ? ' withx' : ''}"><h2>${esc(m.title ?? '')}</h2>${m.dismissible ? '<div class="x" title="Cerrar">×</div>' : ''}</div>
-      <div class="bd">${html}</div>
+      ${(m.title || m.dismissible) ? `<div class="hd${m.dismissible ? ' withx' : ''}"><h2>${esc(m.title ?? '')}</h2>${m.dismissible ? '<div class="x" title="Cerrar">×</div>' : ''}</div>` : ''}
+      <div class="bd${(m.title || m.dismissible) ? '' : ' nohd'}">${html}</div>
       ${hasFooter ? `<div class="ft${m.footer_link ? ' bar' : ''}">${m.footer_link ? act({...m.footer_link, variant: 'lead'}).replace('class="btn lead"', 'class="lead"') : ''}<div class="acts">${(m.actions ?? []).map(a => act(a)).join('')}</div></div>` : ''}
     </div>`;
   }
