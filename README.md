@@ -122,8 +122,8 @@ Van en `actions` y `footer_link` del JSON, nunca como enlaces en el HTML:
 
 | action | Qué hace |
 |---|---|
-| `checkout` (+ `plan`, `interval` opcionales) | Abre la web de suscripción con la sesión del usuario; con `plan` e `interval` va directo al checkout de ese plan |
-| `url` (+ `url`) | Abre la URL https en el navegador |
+| `checkout` | Abre la web en Suscripción (`/dashboard/subscription`, planes de pago) con la sesión del usuario. `plan` e `interval` opcionales llevan al checkout del plan, pero HOY el handoff de billing solo admite rutas `/dashboard/...` sin query: hasta que billing (`web-handoff.ts`) y la web (`lib/safeNext.js`) acepten `/checkout?plan=…`, no los uses |
+| `url` (+ `url`) | Abre la URL https en el navegador. Si es de `confidentialai.es/dashboard/...` (sin query) se abre con la sesión del usuario (handoff); cualquier otra, sin sesión |
 | `recheck` | Vuelve a comprobar el estado de la cuenta ahora |
 | `dismiss` | Cierra el mensaje |
 | `signout` | Cierra la sesión |
