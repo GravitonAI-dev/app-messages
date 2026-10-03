@@ -25,7 +25,7 @@ Los mensajes se pintan con el design system de la app Flutter (`lib/src/theme/de
 | `{{c.warning}}` / `{{c.warningSurface}}` | `#D97706` / `#FDF6E7` | `#F59E0B` / `#3A2A0C` | tono aviso |
 | `{{c.danger}}` / `{{c.dangerText}}` / `{{c.dangerSurface}}` | `#D12953` / `#B31F45` / `#FAF0F3` | `#F06A8B` / `#F06A8B` / `#351A22` | tono error |
 | `{{c.infoSurface}}` | `rgba(125,103,192,.08)` | igual | tono info |
-| `{{c.logoText}}` | `#4B4B4B` (gris del wordmark del logo) | `#D7D7DB` (sidebarText) | la parte "Conf" del wordmark |
+| `{{c.logoText}}` | `#6B6B6B` (gris del wordmark, aclarado por Yeray) | `#D7D7DB` (sidebarText) | la parte "Conf" del wordmark |
 
 ## Tonos
 
