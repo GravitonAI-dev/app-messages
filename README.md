@@ -65,7 +65,7 @@ fixtures/contexts/*.json   contextos de prueba con el resultado esperado (node s
 | `backdrop` | `blur`, `none` | Con blur la app queda tapada y no se puede usar detrás |
 | `dismissible` | `true`, `false` | Si tiene X y se puede cerrar |
 | `persistent` | `true`, `false` | `true`: vuelve a salir en cada comprobación mientras se cumpla `when`. `false`: una vez cerrado no vuelve |
-| `auto_close` | segundos, `0` = no | Se cierra solo (solo con `dismissible: true`) |
+| `auto_close` | segundos, `0` = no | Se cierra solo (solo con `dismissible: true`). Cuenta como cierre: con `persistent: false` no vuelve a salir |
 | `priority` | 0-1000 | Si coinciden varios, el más alto primero. Si hay uno con blur visible, los demás esperan |
 | `enabled` | `true`, `false` | Apagar un mensaje sin borrarlo |
 
