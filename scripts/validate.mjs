@@ -26,7 +26,7 @@ const ATTRS = ['style', 'href', 'src', 'alt', 'width', 'height'];
 const STYLE_PROPS = [
   'color', 'background', 'background-color', 'font-size', 'font-weight', 'font-family', 'line-height', 'text-align',
   'text-decoration', 'border', 'border-top', 'border-bottom', 'border-left', 'border-right', 'border-radius',
-  'margin', 'padding', 'width', 'max-width', 'height', 'display', 'opacity', 'letter-spacing',
+  'margin', 'padding', 'width', 'max-width', 'height', 'display', 'opacity', 'letter-spacing', 'text-transform', 'vertical-align',
 ];
 
 const readJson = (file) => {

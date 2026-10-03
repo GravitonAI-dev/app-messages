@@ -23,8 +23,9 @@ Regla fija de la app, no configurable desde aquí: si telemetría devuelve `paym
 index.json                 qué mensajes existen y dónde están
 messages/<id>.json         propiedades del contenedor + condición
 messages/<id>.html         el contenido
-templates/card.html        tarjeta base con el estilo de los correos de ConfAI
-templates/tones.md         colores de cada tono (rojo, ámbar, azul, verde, morado, gris)
+templates/card.html        tarjeta base con el estilo de la web de ConfAI (tokens de globals.css)
+assets/logo.png            logo de la app, referenciado desde el HTML
+templates/tones.md         tokens de la web y color de cada tono (brand, error, warning, info, success)
 schema/message.schema.json esquema del JSON de un mensaje
 scripts/validate.mjs       validador (lo ejecuta la CI en cada push)
 preview/index.html         vista previa: simula la app y pinta un mensaje en su contenedor

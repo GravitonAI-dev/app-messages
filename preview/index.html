@@ -4,31 +4,29 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Vista previa de mensajes</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   /* Vista previa para el PM: simula la ventana de la app y pinta un mensaje del repo en su contenedor.
      Sirve desde la raíz del repo: python3 -m http.server 8787 → http://localhost:8787/preview/ */
-  html,body{margin:0;height:100%;font-family:'Open Sans',Arial,sans-serif;background:#0A0A14;color:#EDEDF5}
+  html,body{margin:0;height:100%;font-family:Geist,system-ui,-apple-system,sans-serif;background:#0A0A14;color:#EDEDF5}
   .toolbar{position:fixed;top:0;left:0;right:0;z-index:10;display:flex;gap:12px;align-items:center;padding:10px 16px;background:#15152B;border-bottom:1px solid #2B2B4D;font-size:14px}
   .toolbar select{background:#1D1D3A;color:#fff;border:1px solid #2B2B4D;border-radius:8px;padding:6px 10px;font:inherit}
   .toolbar span{color:#9A9AB5}
   .app{position:absolute;inset:48px 0 0 0;display:grid;grid-template-columns:240px 1fr;overflow:hidden}
   .side{background:#121212;border-right:1px solid #222;padding:20px 14px}
   .side div{height:14px;border-radius:7px;background:#2A2A2A;margin:0 0 14px}
-  .main{padding:28px 36px;background:#1A1A2E}
-  .main .bubble{max-width:620px;border-radius:14px;background:#24243A;height:70px;margin:0 0 18px}
-  .main .bubble.me{margin-left:auto;background:#2F2A4D;height:50px}
-  .blur{position:absolute;inset:0;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);background:rgba(10,10,20,.55)}
+  .main{padding:28px 36px;background:#0D0D14}
+  .main .bubble{max-width:620px;border-radius:10px;background:#14142A;border:1px solid rgba(255,255,255,.08);height:70px;margin:0 0 18px}
+  .main .bubble.me{margin-left:auto;background:#1A1A2E;height:50px}
+  .blur{position:absolute;inset:0;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);background:rgba(13,13,20,.6)}
   .layer{position:absolute;inset:0;pointer-events:none}
-  .card{position:absolute;pointer-events:auto;box-shadow:0 30px 80px rgba(0,0,0,.6);border-radius:24px;max-height:calc(100% - 48px);overflow:auto}
+  .card{position:absolute;pointer-events:auto;box-shadow:0 16px 48px rgba(0,0,0,.4);border-radius:16px;max-height:calc(100% - 48px);overflow:auto}
   .card.center{left:50%;top:50%;transform:translate(-50%,-50%)}
   .card.top{left:50%;top:24px;transform:translateX(-50%)}
   .card.bottom{left:50%;bottom:24px;transform:translateX(-50%)}
   .card.top-right{right:24px;top:24px}
   .card.bottom-right{right:24px;bottom:24px}
   .card.sm{width:380px}.card.md{width:560px}.card.lg{width:760px}
-  .x{position:absolute;top:14px;right:16px;width:32px;height:32px;border-radius:50%;border:1px solid #2B2B4D;background:#1D1D3A;color:#B9B9CB;font-size:18px;line-height:30px;text-align:center;cursor:pointer}
+  .x{position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,0.14);background:#1A1A2E;color:#A0A0B8;font-size:18px;line-height:30px;text-align:center;cursor:pointer}
   .meta{position:fixed;left:16px;bottom:12px;font-size:12px;color:#7F7F95;background:#15152B;border:1px solid #2B2B4D;border-radius:8px;padding:6px 10px}
 </style>
 </head>
@@ -52,7 +50,7 @@ async function load(id) {
   const idx = await (await fetch('../index.json')).json();
   const m = await (await fetch('../' + idx.messages[id])).json();
   let html = m.html ?? await (await fetch('../messages/' + m.html_file)).text();
-  html = html.replace(/\{\{\s*([a-z_]+)\s*\}\}/g, (_, k) => VARS[k] ?? '');
+  html = html.replace(/\{\{\s*([a-z_]+)\s*\}\}/g, (_, k) => VARS[k] ?? '').replaceAll('https://raw.githubusercontent.com/GravitonAI-dev/app-messages/main/', '../');
   const card = document.getElementById('card');
   card.className = 'card ' + m.position + ' ' + (typeof m.size === 'number' ? '' : m.size);
   if (typeof m.size === 'number') card.style.width = m.size + 'px'; else card.style.width = '';
