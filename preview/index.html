@@ -88,7 +88,8 @@ const THEMES = {
     border:'#2D2D33', divider:'#26262B', controlBorder:'#3A3A42', controlFill:'#232329', success:'#3FBE7E', successSurface:'#13301F', warning:'#F59E0B', warningSurface:'#3A2A0C',
     danger:'#F06A8B', dangerText:'#F06A8B', dangerSurface:'#351A22', infoSurface:'rgba(125,103,192,0.08)', logoText:'#D7D7DB', brandSurface:'#0D0D14', brandLight:'#9B8FD4', overlay:'rgba(0,0,0,0.6)', sidebarBg:'#121212', sidebarLine:'#2A2A2A' },
 };
-const VARS = { user_name: 'Laura', plan_name: 'Trial', plan_end_date: '2 de octubre de 2026', days_left: '2', usage_percentage: '104' };
+const VARS = { user_name: 'Laura', plan_name: 'Trial', plan_end_date: '2 de octubre de 2026', days_left: '2', usage_percentage: '104', 'plan.basic_plan.name': 'Confidential', 'plan.pro_plan.name': 'Extended', 'plan.lex_pro_plan.name': 'Abogados' };
+const subst = (t) => String(t).replace(/\{\{\s*([a-zA-Z_.]+)\s*\}\}/g, (_, k) => VARS[k] ?? '');
 const q = new URLSearchParams(location.search);
 let theme = q.get('theme') === 'dark' ? 'dark' : 'light';
 let current = null;
@@ -109,7 +110,7 @@ async function load(id) {
   card.className = 'card ' + m.position + ' ' + (typeof m.size === 'number' ? '' : m.size);
   card.style.width = typeof m.size === 'number' ? m.size + 'px' : '';
   const esc = (x) => String(x).replace(/[&<>"]/g, (ch) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
-  const act = (a, extra = '') => `<a class="btn ${a.variant ?? 'primary'}${extra}" href="confai://${a.action}${a.action === 'url' ? '?u=' + encodeURIComponent(a.url) : ''}">${esc(a.label)}</a>`;
+  const act = (a, extra = '') => `<a class="btn ${a.variant ?? 'primary'}${extra}" href="confai://${a.action}${a.action === 'url' ? '?u=' + encodeURIComponent(a.url) : ''}">${esc(subst(a.label))}</a>`;
   const corner = m.position === 'top-right' || m.position === 'bottom-right';
   if (corner) {
     card.classList.add('corner');
@@ -117,7 +118,7 @@ async function load(id) {
   } else {
     const hasFooter = (m.actions && m.actions.length) || m.footer_link;
     card.innerHTML = `<div class="dlg">
-      ${(m.title || m.dismissible) ? `<div class="hd${m.dismissible ? ' withx' : ''}"><h2>${esc(m.title ?? '')}</h2>${m.dismissible ? '<div class="x" title="Cerrar">×</div>' : ''}</div>` : ''}
+      ${(m.title || m.dismissible) ? `<div class="hd${m.dismissible ? ' withx' : ''}"><h2>${esc(subst(m.title ?? ''))}</h2>${m.dismissible ? '<div class="x" title="Cerrar">×</div>' : ''}</div>` : ''}
       <div class="bd${(m.title || m.dismissible) ? '' : ' nohd'}">${html}</div>
       ${hasFooter ? `<div class="ft${m.footer_link ? ' bar' : ''}">${m.footer_link ? act({...m.footer_link, variant: 'lead'}).replace('class="btn lead"', 'class="lead"') : ''}<div class="acts">${(m.actions ?? []).map(a => act(a)).join('')}</div></div>` : ''}
     </div>`;
