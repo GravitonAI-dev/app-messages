@@ -24,6 +24,6 @@
   "footer_link": {
     "label": "Acceder al perfil de usuario",
     "action": "url",
-    "url": "https://confidentialai.es/dashboard/profile"
+    "url": "https://confidentialai.es/dashboard/subscription"
   }
 }
