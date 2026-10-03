@@ -21,7 +21,7 @@ const CONTEXT_FIELDS = [
 ];
 const COLOR_ROLES = ['brandPrimary', 'brandHover', 'accentSoft', 'accentLine', 'textOnAccent', 'surface', 'surfaceMuted', 'surfaceRaised',
   'textPrimary', 'textHeading', 'textSecondary', 'textMuted', 'textTertiary', 'border', 'divider', 'controlBorder', 'controlFill',
-  'success', 'successSurface', 'warning', 'warningSurface', 'danger', 'dangerText', 'dangerSurface', 'infoSurface'];
+  'success', 'successSurface', 'warning', 'warningSurface', 'danger', 'dangerText', 'dangerSurface', 'infoSurface', 'logoText'];
 const VARIABLES = ['user_name', 'plan_name', 'plan_end_date', 'days_left', 'usage_percentage', ...COLOR_ROLES.map((r) => 'c.' + r)];
 const ACTIONS = ['checkout', 'url', 'recheck', 'dismiss', 'signout'];
 const VARIANTS = ['primary', 'secondary', 'ghost', 'danger'];
