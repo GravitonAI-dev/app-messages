@@ -21,7 +21,7 @@
       "variant": "secondary"
     },
     {
-      "label": "Elegir mi plan",
+      "label": "Ver planes",
       "action": "checkout",
       "variant": "primary"
     }
