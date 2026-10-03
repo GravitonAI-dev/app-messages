@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "id": "quota_exhausted",
+  "enabled": true,
+  "when": {
+    "usage.payment_status": { "neq": "expired" },
+    "usage.usage_percentage": { "gte": 100 }
+  },
+  "size": "md",
+  "position": "center",
+  "backdrop": "none",
+  "dismissible": true,
+  "persistent": true,
+  "auto_close": 0,
+  "priority": 50,
+  "html_file": "quota_exhausted.html"
+}

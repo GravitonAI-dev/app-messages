@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "id": "plan_expired",
+  "enabled": true,
+  "when": {
+    "usage.payment_status": "expired"
+  },
+  "size": "md",
+  "position": "center",
+  "backdrop": "blur",
+  "dismissible": false,
+  "persistent": true,
+  "auto_close": 0,
+  "priority": 100,
+  "html_file": "plan_expired.html"
+}

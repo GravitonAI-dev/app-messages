@@ -1,0 +1,45 @@
+<!--
+  PLANTILLA BASE · tarjeta ConfAI (el estilo del correo de compra).
+  Copia este fichero a messages/<id>.html, quita lo que no necesites y cambia:
+    - ACCENT: el color del tono (ver templates/tones.md). Aparece en "AI", el valor destacado y el botón.
+    - Los textos. Variables disponibles: {{user_name}} {{plan_name}} {{plan_end_date}} {{days_left}} {{usage_percentage}}
+    - Los botones: href="confai://checkout" | "confai://url?u=<url codificada>" | "confai://recheck" | "confai://dismiss" | "confai://signout"
+  Solo HTML del subconjunto admitido (ver README). Sin <script>, sin on*=, sin CSS externo.
+-->
+<div style="background:#12122A;border-radius:24px;padding:48px 40px;text-align:center;color:#FFFFFF;font-family:'Open Sans',Arial,sans-serif;">
+
+  <!-- LOGO en cápsula -->
+  <p style="margin:0 0 32px 0;">
+    <span style="display:inline-block;background:#1D1D3A;border:1px solid #2B2B4D;border-radius:14px;padding:12px 28px;font-size:30px;font-weight:700;color:#FFFFFF;">Confidential<span style="color:ACCENT;">AI</span></span>
+  </p>
+
+  <!-- TITULAR -->
+  <h1 style="margin:0 0 20px 0;font-size:30px;font-weight:700;color:#FFFFFF;">Titular del mensaje</h1>
+
+  <!-- PÁRRAFO -->
+  <p style="margin:0 0 32px 0;font-size:17px;line-height:1.6;color:#B9B9CB;">
+    Hola, <strong style="color:#FFFFFF;">{{user_name}}</strong>. Texto del mensaje con lo importante en <strong style="color:#FFFFFF;">negrita blanca</strong>.
+  </p>
+
+  <!-- PANEL DE DATOS (opcional). La última fila va destacada en el color del tono. -->
+  <table style="width:100%;background:#0B0B1C;border-radius:16px;padding:16px 32px;margin:0 0 36px 0;font-size:17px;">
+    <tr><td style="padding:14px 0;color:#B9B9CB;text-align:left;">Etiqueta:</td><td style="padding:14px 0;color:#FFFFFF;font-weight:700;text-align:right;">Valor</td></tr>
+    <tr><td style="padding:14px 0;color:#B9B9CB;text-align:left;">Plan:</td><td style="padding:14px 0;color:#FFFFFF;font-weight:700;text-align:right;">{{plan_name}}</td></tr>
+    <tr><td style="padding:14px 0;color:#B9B9CB;text-align:left;border-top:1px solid #2B2B4D;">Destacado:</td><td style="padding:14px 0;color:ACCENT;font-weight:700;font-size:22px;text-align:right;border-top:1px solid #2B2B4D;">{{plan_end_date}}</td></tr>
+  </table>
+
+  <!-- BOTÓN PRIMARIO -->
+  <p style="margin:0 0 16px 0;">
+    <a href="confai://checkout" style="display:inline-block;background:ACCENT;color:#FFFFFF;text-decoration:none;font-weight:700;font-size:17px;padding:18px 48px;border-radius:14px;">Acción principal</a>
+  </p>
+
+  <!-- BOTÓN SECUNDARIO (opcional) -->
+  <p style="margin:0 0 28px 0;">
+    <a href="confai://dismiss" style="display:inline-block;background:#1D1D3A;border:1px solid #2B2B4D;color:#FFFFFF;text-decoration:none;font-weight:600;font-size:15px;padding:12px 28px;border-radius:12px;">Acción secundaria</a>
+  </p>
+
+  <!-- NOTA AL PIE -->
+  <p style="margin:0;font-size:14px;line-height:1.5;color:#7F7F95;">
+    Texto pequeño de ayuda o <a href="confai://signout" style="color:#B9B9CB;">un enlace</a>.
+  </p>
+</div>

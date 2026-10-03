@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "messages": {
+    "plan_expired": "messages/plan_expired.json",
+    "quota_exhausted": "messages/quota_exhausted.json",
+    "purchase_success": "messages/purchase_success.json",
+    "trial_ending_soon": "messages/trial_ending_soon.json"
+  }
+}

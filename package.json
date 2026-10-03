@@ -1,0 +1,10 @@
+{
+  "name": "app-messages",
+  "private": true,
+  "description": "Mensajes remotos de la app ConfAI",
+  "type": "module",
+  "scripts": {
+    "validate": "node scripts/validate.mjs"
+  },
+  "engines": { "node": ">=20" }
+}

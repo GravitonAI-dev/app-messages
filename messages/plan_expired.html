@@ -1,0 +1,29 @@
+<!-- plan_expired · tono danger (rojo #E5484D). Centrado, blur, persistente, sin X. -->
+<div style="background:#12122A;border-radius:24px;padding:48px 40px;text-align:center;color:#FFFFFF;font-family:'Open Sans',Arial,sans-serif;">
+
+  <p style="margin:0 0 32px 0;">
+    <span style="display:inline-block;background:#1D1D3A;border:1px solid #2B2B4D;border-radius:14px;padding:12px 28px;font-size:30px;font-weight:700;color:#FFFFFF;">Confidential<span style="color:#E5484D;">AI</span></span>
+  </p>
+
+  <h1 style="margin:0 0 20px 0;font-size:30px;font-weight:700;color:#FFFFFF;">Tu plan ha caducado</h1>
+
+  <p style="margin:0 0 32px 0;font-size:17px;line-height:1.6;color:#B9B9CB;">
+    Hola, <strong style="color:#FFFFFF;">{{user_name}}</strong>. Tu plan <strong style="color:#FFFFFF;">{{plan_name}}</strong> terminó el {{plan_end_date}} y tu cuenta está bloqueada. Contrata un plan para seguir usando ConfAI.
+  </p>
+
+  <table style="width:100%;background:#0B0B1C;border-radius:16px;padding:16px 32px;margin:0 0 36px 0;font-size:17px;">
+    <tr><td style="padding:14px 0;color:#B9B9CB;text-align:left;">Plan:</td><td style="padding:14px 0;color:#FFFFFF;font-weight:700;text-align:right;">{{plan_name}}</td></tr>
+    <tr><td style="padding:14px 0;color:#B9B9CB;text-align:left;border-top:1px solid #2B2B4D;">Caducó el:</td><td style="padding:14px 0;color:#E5484D;font-weight:700;font-size:22px;text-align:right;border-top:1px solid #2B2B4D;">{{plan_end_date}}</td></tr>
+  </table>
+
+  <p style="margin:0 0 16px 0;">
+    <a href="confai://checkout" style="display:inline-block;background:#E5484D;color:#FFFFFF;text-decoration:none;font-weight:700;font-size:17px;padding:18px 48px;border-radius:14px;">Contratar un plan</a>
+  </p>
+  <p style="margin:0 0 28px 0;">
+    <a href="confai://recheck" style="display:inline-block;background:#1D1D3A;border:1px solid #2B2B4D;color:#FFFFFF;text-decoration:none;font-weight:600;font-size:15px;padding:12px 28px;border-radius:12px;">Ya lo he actualizado</a>
+  </p>
+
+  <p style="margin:0;font-size:14px;line-height:1.5;color:#7F7F95;">
+    ¿Te has equivocado de cuenta? <a href="confai://signout" style="color:#B9B9CB;">Entrar con otra cuenta</a>
+  </p>
+</div>
