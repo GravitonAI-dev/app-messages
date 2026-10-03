@@ -15,7 +15,7 @@ https://raw.githubusercontent.com/GravitonAI-dev/app-messages/main/
 3. Para cada mensaje evalúa su `when` contra el contexto. Los que cumplen se muestran, ordenados por `priority`.
 4. Pinta cada uno en su contenedor (tamaño, posición, blur, X) con el HTML de `messages/<id>.html` dentro, sustituyendo las variables.
 
-Regla fija de la app, no configurable desde aquí: si telemetría devuelve `payment_status: expired`, la app bloquea con blur siempre, aunque no consiga descargar nada. Dentro del blur pinta `plan_expired` si lo tiene, y si no, un mensaje embebido por defecto.
+Regla fija de la app, no configurable desde aquí: si telemetría devuelve `payment_status: expired`, la app bloquea con blur siempre, aunque no consiga descargar nada. Dentro del blur pinta el mensaje bloqueante de mayor prioridad que cumpla su `when` (`trial_expired` o `plan_expired`) y, si no tiene ninguno, un mensaje embebido por defecto.
 
 ## Estructura
 
@@ -27,6 +27,7 @@ templates/card.html        tarjeta base con el estilo de los correos de ConfAI
 templates/tones.md         colores de cada tono (rojo, ámbar, azul, verde, morado, gris)
 schema/message.schema.json esquema del JSON de un mensaje
 scripts/validate.mjs       validador (lo ejecuta la CI en cada push)
+preview/index.html         vista previa: simula la app y pinta un mensaje en su contenedor
 scripts/evaluate.mjs       evaluador de referencia: contexto → mensajes visibles (la app debe dar lo mismo)
 fixtures/contexts/*.json   contextos de prueba con el resultado esperado (node scripts/test-fixtures.mjs)
 ```
@@ -119,6 +120,16 @@ Un `https://` normal también abre el navegador.
 
 La app las sustituye antes de pintar: `{{user_name}}`, `{{plan_name}}`, `{{plan_end_date}}`, `{{days_left}}`, `{{usage_percentage}}`.
 
+## Vista previa
+
+Para ver un mensaje tal y como lo pintará la app (blur, posición, tamaño, X) sin compilar nada:
+
+```
+python3 -m http.server 8787
+```
+
+y abrir http://localhost:8787/preview/?m=trial_expired. El desplegable cambia de mensaje; los botones `confai://` muestran la acción abajo a la izquierda en lugar de ejecutarla.
+
 ## Evaluador de referencia y fixtures
 
 `scripts/evaluate.mjs` implementa la semántica exacta de `when`, `enabled`, `persistent`, cierres y prioridad. La app debe reproducirla. `fixtures/contexts/` tiene un contexto por situación (caducado, cuota agotada, compra reciente, trial a dos días, cuenta sana, sin métricas) con el resultado esperado; sirven como casos de test para la app.
@@ -132,7 +143,8 @@ node scripts/test-fixtures.mjs
 
 | id | Cuándo | Marco | Tono |
 |---|---|---|---|
-| `plan_expired` | telemetría dice `expired` | centro, blur, persistente, sin X | rojo |
+| `trial_expired` | telemetría dice `expired` y el plan era el Trial | centro, blur, persistente, sin X; gana a `plan_expired` | morado |
+| `plan_expired` | telemetría dice `expired` (plan de pago) | centro, blur, persistente, sin X | rojo |
 | `quota_exhausted` | uso ≥ 100 % con plan vigente | centro, sin blur, con X, vuelve mientras dure | ámbar |
 | `purchase_success` | plan de pago con menos de 24 h | centro, blur, con X, una sola vez | morado |
 | `trial_ending_soon` | trial con 2 días o menos | abajo derecha, sin blur, con X, se cierra a los 10 s | azul |

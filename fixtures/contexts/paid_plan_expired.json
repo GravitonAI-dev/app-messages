@@ -1,0 +1,27 @@
+{
+  "description": "Plan de pago caducado (no trial): sale el bloqueante genérico plan_expired, no el de fin de prueba",
+  "context": {
+    "usage.payment_status": "expired",
+    "usage.usage_percentage": null,
+    "usage.has_constraints": false,
+    "membership.payment_status": "paid",
+    "membership.plan_code": "basic_plan",
+    "membership.plan_name": "Confidential",
+    "membership.created_at": "2026-08-01T10:00:00Z",
+    "membership.max_days": null,
+    "membership.expires_at": null,
+    "membership.days_left": null,
+    "membership.hours_since_start": 1500,
+    "app.version": "1.4.2",
+    "app.platform": "macos"
+  },
+  "expected": {
+    "forced_block": true,
+    "visible_now": [
+      "plan_expired"
+    ],
+    "queue": [
+      "plan_expired"
+    ]
+  }
+}

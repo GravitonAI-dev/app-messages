@@ -1,10 +1,28 @@
 {
   "description": "Trial caducado: telemetría dice expired, billing sigue en paid (caso real verificado el 2026-10-03)",
   "context": {
-    "usage.payment_status": "expired", "usage.usage_percentage": null, "usage.has_constraints": false,
-    "membership.payment_status": "paid", "membership.plan_code": "free_plan", "membership.plan_name": "Trial",
-    "membership.created_at": "2026-09-25T10:00:00Z", "membership.max_days": 7, "membership.expires_at": "2026-10-02T10:00:00Z",
-    "membership.days_left": -1, "membership.hours_since_start": 200, "app.version": "1.4.2", "app.platform": "macos"
+    "usage.payment_status": "expired",
+    "usage.usage_percentage": null,
+    "usage.has_constraints": false,
+    "membership.payment_status": "paid",
+    "membership.plan_code": "free_plan",
+    "membership.plan_name": "Trial",
+    "membership.created_at": "2026-09-25T10:00:00Z",
+    "membership.max_days": 7,
+    "membership.expires_at": "2026-10-02T10:00:00Z",
+    "membership.days_left": -1,
+    "membership.hours_since_start": 200,
+    "app.version": "1.4.2",
+    "app.platform": "macos"
   },
-  "expected": { "forced_block": true, "visible_now": ["plan_expired"], "queue": ["plan_expired"] }
+  "expected": {
+    "forced_block": true,
+    "visible_now": [
+      "trial_expired"
+    ],
+    "queue": [
+      "trial_expired",
+      "plan_expired"
+    ]
+  }
 }

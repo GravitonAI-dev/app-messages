@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "id": "trial_expired",
+  "enabled": true,
+  "when": {
+    "usage.payment_status": "expired",
+    "membership.plan_code": "free_plan"
+  },
+  "size": "md",
+  "position": "center",
+  "backdrop": "blur",
+  "dismissible": false,
+  "persistent": true,
+  "auto_close": 0,
+  "priority": 110,
+  "html_file": "trial_expired.html"
+}

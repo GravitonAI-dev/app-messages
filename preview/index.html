@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vista previa de mensajes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  /* Vista previa para el PM: simula la ventana de la app y pinta un mensaje del repo en su contenedor.
+     Sirve desde la raíz del repo: python3 -m http.server 8787 → http://localhost:8787/preview/ */
+  html,body{margin:0;height:100%;font-family:'Open Sans',Arial,sans-serif;background:#0A0A14;color:#EDEDF5}
+  .toolbar{position:fixed;top:0;left:0;right:0;z-index:10;display:flex;gap:12px;align-items:center;padding:10px 16px;background:#15152B;border-bottom:1px solid #2B2B4D;font-size:14px}
+  .toolbar select{background:#1D1D3A;color:#fff;border:1px solid #2B2B4D;border-radius:8px;padding:6px 10px;font:inherit}
+  .toolbar span{color:#9A9AB5}
+  .app{position:absolute;inset:48px 0 0 0;display:grid;grid-template-columns:240px 1fr;overflow:hidden}
+  .side{background:#121212;border-right:1px solid #222;padding:20px 14px}
+  .side div{height:14px;border-radius:7px;background:#2A2A2A;margin:0 0 14px}
+  .main{padding:28px 36px;background:#1A1A2E}
+  .main .bubble{max-width:620px;border-radius:14px;background:#24243A;height:70px;margin:0 0 18px}
+  .main .bubble.me{margin-left:auto;background:#2F2A4D;height:50px}
+  .blur{position:absolute;inset:0;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);background:rgba(10,10,20,.55)}
+  .layer{position:absolute;inset:0;pointer-events:none}
+  .card{position:absolute;pointer-events:auto;box-shadow:0 30px 80px rgba(0,0,0,.6);border-radius:24px;max-height:calc(100% - 48px);overflow:auto}
+  .card.center{left:50%;top:50%;transform:translate(-50%,-50%)}
+  .card.top{left:50%;top:24px;transform:translateX(-50%)}
+  .card.bottom{left:50%;bottom:24px;transform:translateX(-50%)}
+  .card.top-right{right:24px;top:24px}
+  .card.bottom-right{right:24px;bottom:24px}
+  .card.sm{width:380px}.card.md{width:560px}.card.lg{width:760px}
+  .x{position:absolute;top:14px;right:16px;width:32px;height:32px;border-radius:50%;border:1px solid #2B2B4D;background:#1D1D3A;color:#B9B9CB;font-size:18px;line-height:30px;text-align:center;cursor:pointer}
+  .meta{position:fixed;left:16px;bottom:12px;font-size:12px;color:#7F7F95;background:#15152B;border:1px solid #2B2B4D;border-radius:8px;padding:6px 10px}
+</style>
+</head>
+<body>
+<div class="toolbar">
+  <strong>Vista previa</strong>
+  <select id="pick"></select>
+  <span id="props"></span>
+</div>
+<div class="app">
+  <div class="side"><div style="width:70%"></div><div style="width:50%"></div><div style="width:80%"></div><div style="width:60%"></div><div style="width:40%"></div></div>
+  <div class="main"><div class="bubble"></div><div class="bubble me"></div><div class="bubble" style="height:110px"></div><div class="bubble me"></div><div class="bubble"></div></div>
+</div>
+<div id="blur" class="blur" hidden></div>
+<div class="layer"><div id="card" class="card"></div></div>
+<div class="meta" id="meta"></div>
+<script>
+const VARS = { user_name: 'Laura', plan_name: 'Trial', plan_end_date: '2 de octubre de 2026', days_left: '2', usage_percentage: '104' };
+const q = new URLSearchParams(location.search);
+async function load(id) {
+  const idx = await (await fetch('../index.json')).json();
+  const m = await (await fetch('../' + idx.messages[id])).json();
+  let html = m.html ?? await (await fetch('../messages/' + m.html_file)).text();
+  html = html.replace(/\{\{\s*([a-z_]+)\s*\}\}/g, (_, k) => VARS[k] ?? '');
+  const card = document.getElementById('card');
+  card.className = 'card ' + m.position + ' ' + (typeof m.size === 'number' ? '' : m.size);
+  if (typeof m.size === 'number') card.style.width = m.size + 'px'; else card.style.width = '';
+  card.innerHTML = html + (m.dismissible ? '<div class="x" title="Cerrar">×</div>' : '');
+  document.getElementById('blur').hidden = m.backdrop !== 'blur';
+  document.getElementById('props').textContent = `${m.size} · ${m.position} · ${m.backdrop} · ${m.dismissible ? 'con X' : 'sin X'} · ${m.persistent ? 'persistente' : 'una vez'}${m.auto_close ? ' · se cierra a los ' + m.auto_close + ' s' : ''} · prioridad ${m.priority}`;
+  document.getElementById('meta').textContent = 'when: ' + JSON.stringify(m.when);
+  card.querySelectorAll('a[href^="confai://"]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); document.getElementById('meta').textContent = 'acción: ' + a.getAttribute('href'); }));
+  history.replaceState(null, '', '?m=' + id);
+}
+(async () => {
+  const idx = await (await fetch('../index.json')).json();
+  const pick = document.getElementById('pick');
+  for (const id of Object.keys(idx.messages)) pick.append(new Option(id, id));
+  pick.value = q.get('m') && idx.messages[q.get('m')] ? q.get('m') : Object.keys(idx.messages)[0];
+  pick.addEventListener('change', () => load(pick.value));
+  load(pick.value);
+})();
+</script>
+</body>
+</html>
