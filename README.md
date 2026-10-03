@@ -132,7 +132,7 @@ En el HTML solo se admiten enlaces `https://` normales dentro del texto.
 
 ## Variables
 
-La app las sustituye antes de pintar: `{{user_name}}`, `{{plan_name}}`, `{{plan_end_date}}`, `{{days_left}}`, `{{usage_percentage}}`.
+La app las sustituye antes de pintar, en el HTML y también en `title` y en las etiquetas de `actions` y `footer_link`: `{{user_name}}`, `{{plan_name}}` (plan actual), `{{plan_end_date}}`, `{{days_left}}`, `{{usage_percentage}}`, y el nombre comercial de cada plan tal como lo da billing (`getPlans` → `display_name`): `{{plan.basic_plan.name}}`, `{{plan.pro_plan.name}}`, `{{plan.lex_pro_plan.name}}`. Los nombres de plan nunca se escriben a mano.
 
 Y los colores: `{{c.<rol>}}` se resuelve con `context.colors` del tema activo (claro u oscuro). Roles y valores en `templates/tones.md`. El validador rechaza colores fijos en `color`, `background` y `border`.
 

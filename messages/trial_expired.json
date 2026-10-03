@@ -16,7 +16,7 @@
   "html_file": "trial_expired.html",
   "actions": [
     {
-      "label": "Activar Plan Confidencial",
+      "label": "Activar {{plan.basic_plan.name}}",
       "action": "checkout",
       "plan": "basic_plan",
       "interval": "month",

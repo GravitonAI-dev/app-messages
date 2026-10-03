@@ -22,7 +22,9 @@ const CONTEXT_FIELDS = [
 const COLOR_ROLES = ['brandPrimary', 'brandHover', 'accentSoft', 'accentLine', 'textOnAccent', 'surface', 'surfaceMuted', 'surfaceRaised',
   'textPrimary', 'textHeading', 'textSecondary', 'textMuted', 'textTertiary', 'border', 'divider', 'controlBorder', 'controlFill',
   'success', 'successSurface', 'warning', 'warningSurface', 'danger', 'dangerText', 'dangerSurface', 'infoSurface', 'logoText', 'brandSurface', 'brandLight'];
-const VARIABLES = ['user_name', 'plan_name', 'plan_end_date', 'days_left', 'usage_percentage', ...COLOR_ROLES.map((r) => 'c.' + r)];
+const PLAN_CODES = ['basic_plan', 'pro_plan', 'lex_pro_plan'];
+const VARIABLES = ['user_name', 'plan_name', 'plan_end_date', 'days_left', 'usage_percentage', ...PLAN_CODES.map((c) => `plan.${c}.name`), ...COLOR_ROLES.map((r) => 'c.' + r)];
+const TEXT_VARIABLES = VARIABLES.filter((v) => !v.startsWith('c.'));
 const ACTIONS = ['checkout', 'url', 'recheck', 'dismiss', 'signout'];
 const VARIANTS = ['primary', 'secondary', 'ghost', 'danger'];
 const TONES = ['info', 'success', 'warning', 'danger'];
@@ -107,6 +109,12 @@ function validateMessage(code, file) {
   }
   if (m.backdrop === 'blur' && m.dismissible === false && !(Array.isArray(m.actions) && m.actions.length)) fail(where, 'un bloqueante sin X necesita al menos un botón en actions');
   if (m.backdrop === 'blur' && m.dismissible === false && Array.isArray(m.actions) && m.actions.some((a) => a && a.action === 'dismiss')) fail(where, 'un bloqueante sin X no puede llevar un botón dismiss: solo se quita cuando deja de cumplirse su when');
+
+  // variables de texto en title y en las etiquetas de botones/enlace
+  const checkTextVars = (txt, what) => { for (const v of String(txt).matchAll(/\{\{\s*([a-zA-Z_.]+)\s*\}\}/g)) if (!TEXT_VARIABLES.includes(v[1])) fail(where, `${what}: variable {{${v[1]}}} desconocida. Admitidas: ${TEXT_VARIABLES.join(', ')}`); };
+  if (m.title) checkTextVars(m.title, 'title');
+  (m.actions ?? []).forEach((a, i) => a && a.label && checkTextVars(a.label, `actions[${i}].label`));
+  if (m.footer_link && m.footer_link.label) checkTextVars(m.footer_link.label, 'footer_link.label');
 
   let html = null;
   if (m.html_file) {
