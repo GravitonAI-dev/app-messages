@@ -16,16 +16,16 @@
   "html_file": "trial_expired.html",
   "actions": [
     {
-      "label": "Entrar con otra cuenta",
-      "action": "signout",
-      "variant": "secondary"
-    },
-    {
-      "label": "Contratar Confidential",
+      "label": "Activar Confidential",
       "action": "checkout",
       "plan": "basic_plan",
       "interval": "month",
       "variant": "primary"
     }
-  ]
+  ],
+  "footer_link": {
+    "label": "Acceder al perfil de usuario",
+    "action": "url",
+    "url": "https://confidentialai.es/dashboard/profile"
+  }
 }

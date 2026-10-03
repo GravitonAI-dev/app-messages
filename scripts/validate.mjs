@@ -102,6 +102,7 @@ function validateMessage(code, file) {
   if ('footer_link' in m) {
     const l = m.footer_link;
     if (!l || typeof l.label !== 'string' || !ACTIONS.includes(l.action)) fail(where, 'footer_link necesita label y una acción válida');
+    else if (l.action === 'url' && !/^https:\/\//.test(l.url ?? '')) fail(where, 'footer_link con acción url necesita "url" https://');
     if (corner) fail(where, 'footer_link solo existe en los AppDialog (mensajes centrados)');
   }
   if (m.backdrop === 'blur' && m.dismissible === false && !(Array.isArray(m.actions) && m.actions.length)) fail(where, 'un bloqueante sin X necesita al menos un botón en actions');
