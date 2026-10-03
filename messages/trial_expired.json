@@ -16,18 +16,16 @@
   "html_file": "trial_expired.html",
   "actions": [
     {
-      "label": "Ya he contratado un plan",
-      "action": "recheck",
+      "label": "Entrar con otra cuenta",
+      "action": "signout",
       "variant": "secondary"
     },
     {
-      "label": "Ver planes",
+      "label": "Contratar Confidential",
       "action": "checkout",
+      "plan": "basic_plan",
+      "interval": "month",
       "variant": "primary"
     }
-  ],
-  "footer_link": {
-    "label": "Entrar con otra cuenta",
-    "action": "signout"
-  }
+  ]
 }

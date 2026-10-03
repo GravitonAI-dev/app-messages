@@ -122,7 +122,7 @@ Van en `actions` y `footer_link` del JSON, nunca como enlaces en el HTML:
 
 | action | Qué hace |
 |---|---|
-| `checkout` | Abre la web de suscripción con la sesión del usuario |
+| `checkout` (+ `plan`, `interval` opcionales) | Abre la web de suscripción con la sesión del usuario; con `plan` e `interval` va directo al checkout de ese plan |
 | `url` (+ `url`) | Abre la URL https en el navegador |
 | `recheck` | Vuelve a comprobar el estado de la cuenta ahora |
 | `dismiss` | Cierra el mensaje |

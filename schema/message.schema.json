@@ -171,6 +171,21 @@
               "danger"
             ],
             "default": "primary"
+          },
+          "plan": {
+            "enum": [
+              "basic_plan",
+              "pro_plan",
+              "lex_pro_plan"
+            ],
+            "description": "Solo con checkout: plan preseleccionado"
+          },
+          "interval": {
+            "enum": [
+              "month",
+              "year"
+            ],
+            "description": "Solo con checkout: intervalo preseleccionado"
           }
         }
       },
