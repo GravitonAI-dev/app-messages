@@ -23,7 +23,7 @@ const COLOR_ROLES = ['brandPrimary', 'brandHover', 'accentSoft', 'accentLine', '
   'textPrimary', 'textHeading', 'textSecondary', 'textMuted', 'textTertiary', 'border', 'divider', 'controlBorder', 'controlFill',
   'success', 'successSurface', 'warning', 'warningSurface', 'danger', 'dangerText', 'dangerSurface', 'infoSurface', 'logoText', 'brandSurface', 'brandLight'];
 const PLAN_CODES = ['basic_plan', 'pro_plan', 'lex_pro_plan'];
-const VARIABLES = ['user_name', 'plan_name', 'plan_end_date', 'days_left', 'usage_percentage', ...PLAN_CODES.map((c) => `plan.${c}.name`), ...COLOR_ROLES.map((r) => 'c.' + r)];
+const VARIABLES = ['user_name', 'plan_name', 'plan_end_date', 'days_left', 'usage_percentage', 'usage_reset', 'usage_since', ...PLAN_CODES.map((c) => `plan.${c}.name`), ...COLOR_ROLES.map((r) => 'c.' + r)];
 const TEXT_VARIABLES = VARIABLES.filter((v) => !v.startsWith('c.'));
 const ACTIONS = ['checkout', 'url', 'recheck', 'dismiss', 'signout'];
 const VARIANTS = ['primary', 'secondary', 'ghost', 'danger'];
