@@ -189,6 +189,7 @@ const HOME_CONTAINERS = ['portada_centro', 'portada_derecha'];
 const HOME_ACTIONS = ['new_chat', 'upload_document', 'checkout', 'url'];
 const HOME_ICONS = ['add', 'upload', 'lock', 'info', 'shield', 'sparkle', 'documents', 'chat', 'check', 'alert', 'book', 'mail', 'openExternal', 'newChat', 'library', 'clients', 'skills', 'templates'];
 const BLOCKS = {
+  brand: () => {},
   label: validateTextBlock,
   headline: validateTextBlock,
   text: (where, b) => { if ('title' in b) validateText(`${where}.title`, b.title); validateTextBlock(where, b); },

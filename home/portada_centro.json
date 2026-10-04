@@ -2,6 +2,7 @@
   "schema_version": 1,
   "enabled": true,
   "blocks": [
+    { "type": "brand" },
     {
       "type": "label",
       "text": { "es": "100% local — sin cuenta, sin nube", "en": "100% local — no account, no cloud" }

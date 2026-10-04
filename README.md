@@ -72,13 +72,14 @@ Además de los mensajes, la pantalla de inicio tiene dos contenedores **fijos**:
 
 | Contenedor | Dónde |
 |---|---|
-| `portada_centro` | La columna central entera, debajo de la marca (escudo + ConfAI, que es fija de la app). |
+| `portada_centro` | La columna central entera, marca incluida. |
 | `portada_derecha` | El panel lateral derecho. Con `enabled: false` desaparece también la columna. |
 
 Cada contenedor es `{ "schema_version": 1, "enabled": true, "blocks": [ … ] }`. Los bloques se pintan **en el orden de la lista**; se reordenan, quitan o duplican moviendo líneas, y cada uno admite su propio `enabled: false`. Cualquier tipo vale en cualquiera de los dos contenedores.
 
 | `type` | Campos | Qué pinta |
 |---|---|---|
+| `brand` | — | La marca de la app (escudo + ConfAI). El logo es del binario; aquí sólo se decide si sale y dónde |
 | `label` | `text` | Etiqueta pequeña en mayúsculas, color de marca |
 | `headline` | `text` (admite `\n`) | El titular grande |
 | `text` | `text`, `title` opcional | Párrafo de texto; con `title`, un título encima |
