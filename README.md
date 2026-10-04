@@ -72,7 +72,7 @@ Además de los mensajes, la pantalla de inicio tiene dos contenedores **fijos**:
 
 | Contenedor | Dónde | Qué pinta |
 |---|---|---|
-| `portada_centro_bajo` | Pie de la columna central | Los argumentos numerados (`items`: `number`, `title`, `subtitle`), de 1 a 8, que la app reparte en 4, 2 o 1 columnas según el ancho; y debajo el aviso legal (`legal`): un `text` con huecos `{terms}`, `{privacy}`… y en `links` el `label` y la `url` https de cada hueco. `legal.enabled: false` quita solo el aviso. |
+| `portada_centro_bajo` | Pie de la columna central | Los argumentos numerados (`items`: `number`, `title`, `subtitle`), de 1 a 8, que la app reparte en 4, 2 o 1 columnas según el ancho; y, opcionalmente, un aviso legal debajo (`legal`): un `text` con huecos `{terms}`, `{privacy}`… y en `links` el `label` y la `url` https de cada hueco. Sin `legal` (o con `legal.enabled: false`) no hay aviso. |
 | `portada_derecha` | Panel lateral derecho | `label` (la etiqueta pequeña), `title`, `intro`, `sections` (cada una con `title` e `items`, el número de cambios lo cuenta la app) y `banner` (la franja del candado). |
 
 Reglas:

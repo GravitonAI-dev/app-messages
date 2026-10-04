@@ -46,28 +46,5 @@
         "en": "No traces. No cookies. No profiling"
       }
     }
-  ],
-  "legal": {
-    "enabled": true,
-    "text": {
-      "es": "Al enviar un mensaje a ConfidentialAI aceptas nuestros {terms} y nuestra {privacy}.",
-      "en": "By messaging ConfidentialAI you agree to our {terms} and our {privacy}."
-    },
-    "links": {
-      "terms": {
-        "label": {
-          "es": "Términos",
-          "en": "Terms"
-        },
-        "url": "https://confidentialai.es/terms"
-      },
-      "privacy": {
-        "label": {
-          "es": "Política de privacidad",
-          "en": "Privacy Policy"
-        },
-        "url": "https://confidentialai.es/privacy"
-      }
-    }
-  }
+  ]
 }
