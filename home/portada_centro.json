@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "enabled": true,
+  "blocks": [
+    {
+      "type": "label",
+      "text": { "es": "100% local — sin cuenta, sin nube", "en": "100% local — no account, no cloud" }
+    },
+    {
+      "type": "headline",
+      "text": { "es": "Top IA.\nPrivacidad real.", "en": "Top AI.\nReal privacy." }
+    },
+    {
+      "type": "text",
+      "text": {
+        "es": "Pregunta lo que quieras y trabaja con tus documentos. Todo se procesa en este equipo: la IA responde sin saber quién eres y nada queda registrado.",
+        "en": "Ask anything and work with your documents. Everything runs on this computer: the AI answers without knowing who you are, and nothing is recorded."
+      }
+    },
+    {
+      "type": "actions",
+      "items": [
+        { "label": { "es": "Empezar un chat nuevo", "en": "Start a new chat" }, "action": "new_chat", "variant": "primary", "icon": "add" },
+        { "label": { "es": "Subir un documento", "en": "Upload a document" }, "action": "upload_document", "variant": "secondary", "icon": "upload" }
+      ]
+    },
+    {
+      "type": "features",
+      "items": [
+        {
+          "number": "01",
+          "title": { "es": "Identidad Oculta AI", "en": "Hidden Identity AI" },
+          "subtitle": { "es": "AI nunca conoce quién eres", "en": "AI never knows who you are" }
+        },
+        {
+          "number": "02",
+          "title": { "es": "Los datos son tuyos", "en": "You own the data" },
+          "subtitle": { "es": "Almacenados localmente para controlar", "en": "Stored locally for full control" }
+        },
+        {
+          "number": "03",
+          "title": { "es": "Anonimización", "en": "Anonymization" },
+          "subtitle": { "es": "Controla lo que se comparte", "en": "You control what is shared" }
+        },
+        {
+          "number": "04",
+          "title": { "es": "Confidencialidad", "en": "Confidentiality" },
+          "subtitle": { "es": "Sin rastros. Sin cookies. Sin perfiles", "en": "No traces. No cookies. No profiling" }
+        }
+      ]
+    }
+  ]
+}

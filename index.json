@@ -9,7 +9,7 @@
     "trial_ending_soon": "messages/trial_ending_soon.json"
   },
   "home": {
-    "portada_centro_bajo": "home/portada_centro_bajo.json",
+    "portada_centro": "home/portada_centro.json",
     "portada_derecha": "home/portada_derecha.json"
   }
 }

@@ -181,20 +181,40 @@ function validateHref(where, href) {
 }
 
 // ---- Portada: los dos contenedores fijos (home/*.json) -----------------------
-// Están siempre en la pantalla de inicio (salvo `enabled: false`, que los
-// oculta); lo que cambia es el texto. Cada texto es un objeto por
-// idioma con "es" obligatorio; la app cae a "es" si falta su idioma.
-const HOME = { portada_centro_bajo: validateHomeFeatures, portada_derecha: validateHomeNews };
+// Están siempre en la pantalla de inicio (salvo `enabled: false`); lo que
+// cambia es su contenido: una lista ordenada de bloques, cada uno con su
+// `type` y su `enabled`. Son datos, no HTML: los pinta la app con sus
+// componentes. Cada texto es un objeto por idioma con "es" obligatorio.
+const HOME_CONTAINERS = ['portada_centro', 'portada_derecha'];
+const HOME_ACTIONS = ['new_chat', 'upload_document', 'checkout', 'url'];
+const HOME_ICONS = ['add', 'upload', 'lock', 'info', 'shield', 'sparkle', 'documents', 'chat', 'check', 'alert', 'book', 'mail', 'openExternal', 'newChat', 'library', 'clients', 'skills', 'templates'];
+const BLOCKS = {
+  label: validateTextBlock,
+  headline: validateTextBlock,
+  text: (where, b) => { if ('title' in b) validateText(`${where}.title`, b.title); validateTextBlock(where, b); },
+  actions: validateActionsBlock,
+  features: validateFeaturesBlock,
+  legal: validateLegalBlock,
+  news: validateNewsBlock,
+  banner: validateBannerBlock,
+};
 if ('home' in index) {
   if (!index.home || typeof index.home !== 'object') fail('index.json', '"home" debe ser un objeto');
   else for (const [key, file] of Object.entries(index.home)) {
-    if (!(key in HOME)) { fail('index.json', `home: contenedor desconocido "${key}". Admitidos: ${Object.keys(HOME).join(', ')}`); continue; }
+    if (!HOME_CONTAINERS.includes(key)) { fail('index.json', `home: contenedor desconocido "${key}". Admitidos: ${HOME_CONTAINERS.join(', ')}`); continue; }
     if (!existsSync(resolve(ROOT, file))) { fail('index.json', `home.${key} apunta a ${file}, que no existe`); continue; }
     const doc = readJson(file);
     if (!doc) continue;
     if (doc.schema_version !== 1) fail(file, 'schema_version debe ser 1');
     if ('enabled' in doc && typeof doc.enabled !== 'boolean') fail(file, 'enabled debe ser true o false');
-    HOME[key](file, doc);
+    if (!Array.isArray(doc.blocks) || doc.blocks.length === 0) { fail(file, '"blocks" debe ser una lista con al menos un bloque'); continue; }
+    doc.blocks.forEach((b, i) => {
+      const where = `${file} blocks[${i}]`;
+      if (!b || typeof b !== 'object') { fail(where, 'debe ser un objeto'); return; }
+      if (!(b.type in BLOCKS)) { fail(where, `type "${b.type}" desconocido. Admitidos: ${Object.keys(BLOCKS).join(', ')}`); return; }
+      if ('enabled' in b && typeof b.enabled !== 'boolean') fail(where, 'enabled debe ser true o false');
+      BLOCKS[b.type](where, b);
+    });
   }
 }
 
@@ -207,33 +227,45 @@ function validateText(where, value) {
   }
 }
 
-function validateHomeFeatures(file, doc) {
-  if (!Array.isArray(doc.items) || doc.items.length < 1 || doc.items.length > 8) { fail(file, '"items" debe tener entre 1 y 8 argumentos'); return; }
-  doc.items.forEach((it, i) => {
-    const where = `${file} items[${i}]`;
-    if (typeof it.number !== 'string' || !it.number.trim()) fail(where, 'falta "number"');
-    validateText(`${where}.title`, it.title);
-    validateText(`${where}.subtitle`, it.subtitle);
+function validateTextBlock(where, b) { validateText(`${where}.text`, b.text); }
+
+function validateActionsBlock(where, b) {
+  if (!Array.isArray(b.items) || b.items.length < 1 || b.items.length > 4) { fail(where, '"items" debe tener entre 1 y 4 botones'); return; }
+  b.items.forEach((a, i) => {
+    const w = `${where}.items[${i}]`;
+    validateText(`${w}.label`, a.label);
+    if (!HOME_ACTIONS.includes(a.action)) fail(w, `action "${a.action}" desconocida. Admitidas: ${HOME_ACTIONS.join(', ')}`);
+    if (a.action === 'url' && !(typeof a.url === 'string' && /^https:\/\//.test(a.url))) fail(w, 'action url necesita "url" https://');
+    if (a.action !== 'url' && 'url' in a) fail(w, 'sólo action url lleva "url"');
+    if ('variant' in a && !['primary', 'secondary'].includes(a.variant)) fail(w, `variant "${a.variant}" inválido (primary, secondary)`);
+    if ('icon' in a && !HOME_ICONS.includes(a.icon)) fail(w, `icon "${a.icon}" desconocido. Admitidos: ${HOME_ICONS.join(', ')}`);
   });
-  if ('legal' in doc) validateHomeLegal(`${file} legal`, doc.legal);
 }
 
-// El aviso legal bajo los argumentos: un texto con huecos {nombre} y un enlace
-// https por hueco. Cada hueco del texto tiene que tener su enlace y viceversa.
-function validateHomeLegal(where, legal) {
-  if (!legal || typeof legal !== 'object') { fail(where, 'debe ser un objeto con "text" y "links"'); return; }
-  if ('enabled' in legal && typeof legal.enabled !== 'boolean') fail(where, 'enabled debe ser true o false');
-  validateText(`${where}.text`, legal.text);
-  const links = legal.links && typeof legal.links === 'object' ? legal.links : {};
-  if (!legal.links || typeof legal.links !== 'object') fail(where, 'falta "links"');
+function validateFeaturesBlock(where, b) {
+  if (!Array.isArray(b.items) || b.items.length < 1 || b.items.length > 8) { fail(where, '"items" debe tener entre 1 y 8 argumentos'); return; }
+  b.items.forEach((it, i) => {
+    const w = `${where}.items[${i}]`;
+    if (typeof it.number !== 'string' || !it.number.trim()) fail(w, 'falta "number"');
+    validateText(`${w}.title`, it.title);
+    validateText(`${w}.subtitle`, it.subtitle);
+  });
+}
+
+// Un texto con huecos {nombre} y un enlace https por hueco; cada hueco del
+// texto tiene que tener su enlace y viceversa.
+function validateLegalBlock(where, b) {
+  validateText(`${where}.text`, b.text);
+  const links = b.links && typeof b.links === 'object' ? b.links : {};
+  if (!b.links || typeof b.links !== 'object') fail(where, 'falta "links"');
   for (const [name, link] of Object.entries(links)) {
     if (!/^[a-z][a-z0-9_]*$/.test(name)) fail(where, `links: nombre "${name}" inválido (minúsculas, números y _)`);
     if (!link || typeof link !== 'object') { fail(where, `links.${name} debe ser un objeto con "label" y "url"`); continue; }
     validateText(`${where}.links.${name}.label`, link.label);
     if (typeof link.url !== 'string' || !/^https:\/\//.test(link.url)) fail(where, `links.${name}.url debe ser https://`);
   }
-  if (legal.text && typeof legal.text === 'object') {
-    for (const [lang, text] of Object.entries(legal.text)) {
+  if (b.text && typeof b.text === 'object') {
+    for (const [lang, text] of Object.entries(b.text)) {
       if (typeof text !== 'string') continue;
       const used = [...text.matchAll(/\{([a-z0-9_]+)\}/g)].map((m) => m[1]);
       for (const u of used) if (!(u in links)) fail(where, `text.${lang} usa {${u}} y no hay links.${u}`);
@@ -242,15 +274,22 @@ function validateHomeLegal(where, legal) {
   }
 }
 
-function validateHomeNews(file, doc) {
-  for (const k of ['label', 'title', 'intro', 'banner']) validateText(`${file} ${k}`, doc[k]);
-  if (!Array.isArray(doc.sections) || doc.sections.length === 0) { fail(file, '"sections" debe tener al menos una sección'); return; }
-  doc.sections.forEach((s, i) => {
-    const where = `${file} sections[${i}]`;
-    validateText(`${where}.title`, s.title);
-    if (!Array.isArray(s.items) || s.items.length === 0) { fail(where, '"items" debe tener al menos un cambio'); return; }
-    s.items.forEach((t, j) => validateText(`${where}.items[${j}]`, t));
+function validateNewsBlock(where, b) {
+  validateText(`${where}.title`, b.title);
+  for (const k of ['label', 'intro']) if (k in b) validateText(`${where}.${k}`, b[k]);
+  if (!Array.isArray(b.sections) || b.sections.length === 0) { fail(where, '"sections" debe tener al menos una sección'); return; }
+  b.sections.forEach((s, i) => {
+    const w = `${where}.sections[${i}]`;
+    validateText(`${w}.title`, s.title);
+    if (!Array.isArray(s.items) || s.items.length === 0) { fail(w, '"items" debe tener al menos un cambio'); return; }
+    s.items.forEach((t, j) => validateText(`${w}.items[${j}]`, t));
   });
+}
+
+function validateBannerBlock(where, b) {
+  validateText(`${where}.text`, b.text);
+  if ('icon' in b && !HOME_ICONS.includes(b.icon)) fail(where, `icon "${b.icon}" desconocido. Admitidos: ${HOME_ICONS.join(', ')}`);
+  if ('tone' in b && !TONES.includes(b.tone)) fail(where, `tone "${b.tone}" inválido (${TONES.join(', ')})`);
 }
 
 finish();

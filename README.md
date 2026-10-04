@@ -23,7 +23,7 @@ Regla fija de la app, no configurable desde aquí: si telemetría devuelve `paym
 index.json                 qué mensajes existen y dónde están
 messages/<id>.json         propiedades del contenedor + condición
 messages/<id>.html         el contenido
-home/<contenedor>.json     los dos contenedores fijos de la portada (ver «Portada»)
+home/<contenedor>.json     los dos contenedores fijos de la portada, en bloques (ver «Portada»)
 templates/card.html        cuerpo de ejemplo con los patrones del design system de la app
 assets/logo.png            logo de la app, referenciado desde el HTML
 templates/tones.md         roles de color {{c.*}} (claro/oscuro), tonos y medidas del design system
@@ -61,26 +61,38 @@ fixtures/contexts/*.json   contextos de prueba con el resultado esperado (node s
 
 ## Portada
 
-Además de los mensajes, la pantalla de inicio tiene dos contenedores **fijos**: no dependen de la cuenta ni llevan `when`, están siempre y lo único que cambia es su texto. Se declaran en `index.json` bajo `home`:
+Además de los mensajes, la pantalla de inicio tiene dos contenedores **fijos**: no dependen de la cuenta ni llevan `when`. Se declaran en `index.json` bajo `home`:
 
 ```json
 "home": {
-  "portada_centro_bajo": "home/portada_centro_bajo.json",
+  "portada_centro":  "home/portada_centro.json",
   "portada_derecha": "home/portada_derecha.json"
 }
 ```
 
-| Contenedor | Dónde | Qué pinta |
+| Contenedor | Dónde |
+|---|---|
+| `portada_centro` | La columna central entera, debajo de la marca (escudo + ConfAI, que es fija de la app). |
+| `portada_derecha` | El panel lateral derecho. Con `enabled: false` desaparece también la columna. |
+
+Cada contenedor es `{ "schema_version": 1, "enabled": true, "blocks": [ … ] }`. Los bloques se pintan **en el orden de la lista**; se reordenan, quitan o duplican moviendo líneas, y cada uno admite su propio `enabled: false`. Cualquier tipo vale en cualquiera de los dos contenedores.
+
+| `type` | Campos | Qué pinta |
 |---|---|---|
-| `portada_centro_bajo` | Pie de la columna central | Los argumentos numerados (`items`: `number`, `title`, `subtitle`), de 1 a 8, que la app reparte en 4, 2 o 1 columnas según el ancho; y, opcionalmente, un aviso legal debajo (`legal`): un `text` con huecos `{terms}`, `{privacy}`… y en `links` el `label` y la `url` https de cada hueco. Sin `legal` (o con `legal.enabled: false`) no hay aviso. |
-| `portada_derecha` | Panel lateral derecho | `label` (la etiqueta pequeña), `title`, `intro`, `sections` (cada una con `title` e `items`, el número de cambios lo cuenta la app) y `banner` (la franja del candado). |
+| `label` | `text` | Etiqueta pequeña en mayúsculas, color de marca |
+| `headline` | `text` (admite `\n`) | El titular grande |
+| `text` | `text`, `title` opcional | Párrafo de texto; con `title`, un título encima |
+| `actions` | `items`: `label`, `action`, `variant` (`primary`/`secondary`), `icon` | Fila de botones. `action`: `new_chat`, `upload_document`, `checkout`, `url` (con `url` https) |
+| `features` | `items` (1 a 8): `number`, `title`, `subtitle` | Argumentos numerados bajo una raya, en 4, 2 o 1 columnas según el ancho |
+| `legal` | `text` con huecos `{nombre}`, `links.<nombre>`: `label`, `url` https | Aviso legal con cada hueco como enlace |
+| `news` | `title`, `label` e `intro` opcionales, `sections`: `title`, `items` | Secciones plegables; el «N cambios» lo cuenta la app |
+| `banner` | `text`, `icon`, `tone` (`info`, `success`, `warning`, `danger`) | Franja destacada |
 
 Reglas:
 
 - Cada texto es un objeto por idioma: `{ "es": "…", "en": "…" }`. `es` es obligatorio; si falta el idioma del usuario se usa `es`.
-- `enabled: false` oculta el contenedor entero. En `portada_derecha` desaparece también la columna; en `portada_centro_bajo` se van los argumentos y el aviso legal.
-- Si el fichero no se puede descargar y no hay caché, la app enseña su texto embebido (el que había antes de existir este repo). Si está en caché, enseña la caché.
-- Sin HTML: son datos y los pinta la app con sus componentes (`AppAccordion`, `AppBanner`, las columnas de argumentos), así que no hay nada que validar de estilo.
+- Manda el repo: si trae el contenedor, lo que no esté en `blocks` no se pinta. Si el fichero no se puede descargar y no hay caché, la app enseña su portada embebida (la de antes de existir este repo). Si está en caché, enseña la caché.
+- Los iconos admitidos son nombres del catálogo de la app: `add`, `upload`, `lock`, `info`, `shield`, `sparkle`, `documents`, `chat`, `check`, `alert`, `book`, `mail`, `openExternal`, `newChat`, `library`, `clients`, `skills`, `templates`.
 
 ## Renderizado fijo
 
