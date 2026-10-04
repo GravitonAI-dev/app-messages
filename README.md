@@ -83,7 +83,7 @@ Cada contenedor es `{ "schema_version": 1, "enabled": true, "blocks": [ … ] }`
 | `label` | `text` | Etiqueta pequeña en mayúsculas, color de marca |
 | `headline` | `text` (admite `\n`) | El titular grande |
 | `text` | `text`, `title` opcional | Párrafo de texto; con `title`, un título encima |
-| `actions` | `items`: `label`, `action`, `variant` (`primary`/`secondary`), `icon` | Fila de botones. `action`: `new_chat`, `upload_document`, `checkout`, `url` (con `url` https) |
+| `actions` | `items`: `label`, `action`, `variant` (`primary`/`secondary`), `icon` | Fila de botones. `action`: `new_chat` (chat nuevo), `upload_document` y `transcribe_audio` (diálogo «Abrir en editor» en un chat nuevo), `create_client` (diálogo «Nuevo cliente», con extracción desde PDF), `checkout`, `url` (con `url` https) |
 | `features` | `items` (1 a 8): `number`, `title`, `subtitle` | Argumentos numerados bajo una raya, en 4, 2 o 1 columnas según el ancho |
 | `legal` | `text` con huecos `{nombre}`, `links.<nombre>`: `label`, `url` https | Aviso legal con cada hueco como enlace |
 | `news` | `title`, `label` e `intro` opcionales, `sections`: `title`, `items` | Secciones plegables; el «N cambios» lo cuenta la app |
@@ -93,7 +93,7 @@ Reglas:
 
 - Cada texto es un objeto por idioma: `{ "es": "…", "en": "…" }`. `es` es obligatorio; si falta el idioma del usuario se usa `es`.
 - Manda el repo: si trae el contenedor, lo que no esté en `blocks` no se pinta. Si el fichero no se puede descargar y no hay caché, la app enseña su portada embebida (la de antes de existir este repo). Si está en caché, enseña la caché.
-- Los iconos admitidos son nombres del catálogo de la app: `add`, `upload`, `lock`, `info`, `shield`, `sparkle`, `documents`, `chat`, `check`, `alert`, `book`, `mail`, `openExternal`, `newChat`, `library`, `clients`, `skills`, `templates`.
+- Los iconos admitidos son nombres del catálogo de la app: `add`, `upload`, `audio`, `lock`, `info`, `shield`, `sparkle`, `documents`, `chat`, `check`, `alert`, `book`, `mail`, `openExternal`, `newChat`, `library`, `clients`, `skills`, `templates`.
 
 ## Renderizado fijo
 

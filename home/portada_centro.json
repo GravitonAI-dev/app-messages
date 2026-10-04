@@ -2,14 +2,22 @@
   "schema_version": 1,
   "enabled": true,
   "blocks": [
-    { "type": "brand" },
+    {
+      "type": "brand"
+    },
     {
       "type": "label",
-      "text": { "es": "100% local — sin cuenta, sin nube", "en": "100% local — no account, no cloud" }
+      "text": {
+        "es": "100% local — sin cuenta, sin nube",
+        "en": "100% local — no account, no cloud"
+      }
     },
     {
       "type": "headline",
-      "text": { "es": "Top IA.\nPrivacidad real.", "en": "Top AI.\nReal privacy." }
+      "text": {
+        "es": "Top IA.\nPrivacidad real.",
+        "en": "Top AI.\nReal privacy."
+      }
     },
     {
       "type": "text",
@@ -21,8 +29,42 @@
     {
       "type": "actions",
       "items": [
-        { "label": { "es": "Empezar un chat nuevo", "en": "Start a new chat" }, "action": "new_chat", "variant": "primary", "icon": "add" },
-        { "label": { "es": "Subir un documento", "en": "Upload a document" }, "action": "upload_document", "variant": "secondary", "icon": "upload" }
+        {
+          "label": {
+            "es": "Empezar un chat nuevo",
+            "en": "Start a new chat"
+          },
+          "action": "new_chat",
+          "variant": "primary",
+          "icon": "add"
+        },
+        {
+          "label": {
+            "es": "Subir un documento",
+            "en": "Upload a document"
+          },
+          "action": "upload_document",
+          "variant": "secondary",
+          "icon": "upload"
+        },
+        {
+          "label": {
+            "es": "Crear cliente desde PDF",
+            "en": "Create client from PDF"
+          },
+          "action": "create_client",
+          "variant": "secondary",
+          "icon": "clients"
+        },
+        {
+          "label": {
+            "es": "Convertir audio a texto",
+            "en": "Convert audio to text"
+          },
+          "action": "transcribe_audio",
+          "variant": "secondary",
+          "icon": "audio"
+        }
       ]
     },
     {
@@ -30,23 +72,47 @@
       "items": [
         {
           "number": "01",
-          "title": { "es": "Identidad Oculta AI", "en": "Hidden Identity AI" },
-          "subtitle": { "es": "AI nunca conoce quién eres", "en": "AI never knows who you are" }
+          "title": {
+            "es": "Identidad Oculta AI",
+            "en": "Hidden Identity AI"
+          },
+          "subtitle": {
+            "es": "AI nunca conoce quién eres",
+            "en": "AI never knows who you are"
+          }
         },
         {
           "number": "02",
-          "title": { "es": "Los datos son tuyos", "en": "You own the data" },
-          "subtitle": { "es": "Almacenados localmente para controlar", "en": "Stored locally for full control" }
+          "title": {
+            "es": "Los datos son tuyos",
+            "en": "You own the data"
+          },
+          "subtitle": {
+            "es": "Almacenados localmente para controlar",
+            "en": "Stored locally for full control"
+          }
         },
         {
           "number": "03",
-          "title": { "es": "Anonimización", "en": "Anonymization" },
-          "subtitle": { "es": "Controla lo que se comparte", "en": "You control what is shared" }
+          "title": {
+            "es": "Anonimización",
+            "en": "Anonymization"
+          },
+          "subtitle": {
+            "es": "Controla lo que se comparte",
+            "en": "You control what is shared"
+          }
         },
         {
           "number": "04",
-          "title": { "es": "Confidencialidad", "en": "Confidentiality" },
-          "subtitle": { "es": "Sin rastros. Sin cookies. Sin perfiles", "en": "No traces. No cookies. No profiling" }
+          "title": {
+            "es": "Confidencialidad",
+            "en": "Confidentiality"
+          },
+          "subtitle": {
+            "es": "Sin rastros. Sin cookies. Sin perfiles",
+            "en": "No traces. No cookies. No profiling"
+          }
         }
       ]
     }

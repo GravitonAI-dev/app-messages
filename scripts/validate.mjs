@@ -186,8 +186,8 @@ function validateHref(where, href) {
 // `type` y su `enabled`. Son datos, no HTML: los pinta la app con sus
 // componentes. Cada texto es un objeto por idioma con "es" obligatorio.
 const HOME_CONTAINERS = ['portada_centro', 'portada_derecha'];
-const HOME_ACTIONS = ['new_chat', 'upload_document', 'checkout', 'url'];
-const HOME_ICONS = ['add', 'upload', 'lock', 'info', 'shield', 'sparkle', 'documents', 'chat', 'check', 'alert', 'book', 'mail', 'openExternal', 'newChat', 'library', 'clients', 'skills', 'templates'];
+const HOME_ACTIONS = ['new_chat', 'upload_document', 'transcribe_audio', 'create_client', 'checkout', 'url'];
+const HOME_ICONS = ['add', 'upload', 'audio', 'lock', 'info', 'shield', 'sparkle', 'documents', 'chat', 'check', 'alert', 'book', 'mail', 'openExternal', 'newChat', 'library', 'clients', 'skills', 'templates'];
 const BLOCKS = {
   brand: () => {},
   label: validateTextBlock,
