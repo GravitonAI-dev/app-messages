@@ -72,13 +72,13 @@ Además de los mensajes, la pantalla de inicio tiene dos contenedores **fijos**:
 
 | Contenedor | Dónde | Qué pinta |
 |---|---|---|
-| `portada_centro_bajo` | Pie de la columna central, sobre el aviso legal | Los argumentos numerados (`items`: `number`, `title`, `subtitle`), de 1 a 8. La app los reparte en 4, 2 o 1 columnas según el ancho. |
+| `portada_centro_bajo` | Pie de la columna central | Los argumentos numerados (`items`: `number`, `title`, `subtitle`), de 1 a 8, que la app reparte en 4, 2 o 1 columnas según el ancho; y debajo el aviso legal (`legal`): un `text` con huecos `{terms}`, `{privacy}`… y en `links` el `label` y la `url` https de cada hueco. `legal.enabled: false` quita solo el aviso. |
 | `portada_derecha` | Panel lateral derecho | `label` (la etiqueta pequeña), `title`, `intro`, `sections` (cada una con `title` e `items`, el número de cambios lo cuenta la app) y `banner` (la franja del candado). |
 
 Reglas:
 
 - Cada texto es un objeto por idioma: `{ "es": "…", "en": "…" }`. `es` es obligatorio; si falta el idioma del usuario se usa `es`.
-- `enabled: false` oculta el contenedor entero. En `portada_derecha` desaparece también la columna; en `portada_centro_bajo` queda solo el aviso legal.
+- `enabled: false` oculta el contenedor entero. En `portada_derecha` desaparece también la columna; en `portada_centro_bajo` se van los argumentos y el aviso legal.
 - Si el fichero no se puede descargar y no hay caché, la app enseña su texto embebido (el que había antes de existir este repo). Si está en caché, enseña la caché.
 - Sin HTML: son datos y los pinta la app con sus componentes (`AppAccordion`, `AppBanner`, las columnas de argumentos), así que no hay nada que validar de estilo.
 

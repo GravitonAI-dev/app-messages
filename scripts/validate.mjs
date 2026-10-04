@@ -215,6 +215,31 @@ function validateHomeFeatures(file, doc) {
     validateText(`${where}.title`, it.title);
     validateText(`${where}.subtitle`, it.subtitle);
   });
+  if ('legal' in doc) validateHomeLegal(`${file} legal`, doc.legal);
+}
+
+// El aviso legal bajo los argumentos: un texto con huecos {nombre} y un enlace
+// https por hueco. Cada hueco del texto tiene que tener su enlace y viceversa.
+function validateHomeLegal(where, legal) {
+  if (!legal || typeof legal !== 'object') { fail(where, 'debe ser un objeto con "text" y "links"'); return; }
+  if ('enabled' in legal && typeof legal.enabled !== 'boolean') fail(where, 'enabled debe ser true o false');
+  validateText(`${where}.text`, legal.text);
+  const links = legal.links && typeof legal.links === 'object' ? legal.links : {};
+  if (!legal.links || typeof legal.links !== 'object') fail(where, 'falta "links"');
+  for (const [name, link] of Object.entries(links)) {
+    if (!/^[a-z][a-z0-9_]*$/.test(name)) fail(where, `links: nombre "${name}" inválido (minúsculas, números y _)`);
+    if (!link || typeof link !== 'object') { fail(where, `links.${name} debe ser un objeto con "label" y "url"`); continue; }
+    validateText(`${where}.links.${name}.label`, link.label);
+    if (typeof link.url !== 'string' || !/^https:\/\//.test(link.url)) fail(where, `links.${name}.url debe ser https://`);
+  }
+  if (legal.text && typeof legal.text === 'object') {
+    for (const [lang, text] of Object.entries(legal.text)) {
+      if (typeof text !== 'string') continue;
+      const used = [...text.matchAll(/\{([a-z0-9_]+)\}/g)].map((m) => m[1]);
+      for (const u of used) if (!(u in links)) fail(where, `text.${lang} usa {${u}} y no hay links.${u}`);
+      for (const l of Object.keys(links)) if (!used.includes(l)) fail(where, `text.${lang} no usa {${l}} y links.${l} existe`);
+    }
+  }
 }
 
 function validateHomeNews(file, doc) {
