@@ -23,6 +23,7 @@ Regla fija de la app, no configurable desde aquí: si telemetría devuelve `paym
 index.json                 qué mensajes existen y dónde están
 messages/<id>.json         propiedades del contenedor + condición
 messages/<id>.html         el contenido
+home/<contenedor>.json     los dos contenedores fijos de la portada (ver «Portada»)
 templates/card.html        cuerpo de ejemplo con los patrones del design system de la app
 assets/logo.png            logo de la app, referenciado desde el HTML
 templates/tones.md         roles de color {{c.*}} (claro/oscuro), tonos y medidas del design system
@@ -57,6 +58,29 @@ fixtures/contexts/*.json   contextos de prueba con el resultado esperado (node s
 
 3. Añádelo a `index.json`: `"mi_mensaje": "messages/mi_mensaje.json"`.
 4. `node scripts/validate.mjs` (o espera a la CI). En verde, merge a `main` y listo.
+
+## Portada
+
+Además de los mensajes, la pantalla de inicio tiene dos contenedores **fijos**: no dependen de la cuenta ni llevan `when`, están siempre y lo único que cambia es su texto. Se declaran en `index.json` bajo `home`:
+
+```json
+"home": {
+  "portada_centro_bajo": "home/portada_centro_bajo.json",
+  "portada_derecha": "home/portada_derecha.json"
+}
+```
+
+| Contenedor | Dónde | Qué pinta |
+|---|---|---|
+| `portada_centro_bajo` | Pie de la columna central, sobre el aviso legal | Los argumentos numerados (`items`: `number`, `title`, `subtitle`), de 1 a 8. La app los reparte en 4, 2 o 1 columnas según el ancho. |
+| `portada_derecha` | Panel lateral derecho | `label` (la etiqueta pequeña), `title`, `intro`, `sections` (cada una con `title` e `items`, el número de cambios lo cuenta la app) y `banner` (la franja del candado). |
+
+Reglas:
+
+- Cada texto es un objeto por idioma: `{ "es": "…", "en": "…" }`. `es` es obligatorio; si falta el idioma del usuario se usa `es`.
+- `enabled: false` oculta el contenedor entero. En `portada_derecha` desaparece también la columna; en `portada_centro_bajo` queda solo el aviso legal.
+- Si el fichero no se puede descargar y no hay caché, la app enseña su texto embebido (el que había antes de existir este repo). Si está en caché, enseña la caché.
+- Sin HTML: son datos y los pinta la app con sus componentes (`AppAccordion`, `AppBanner`, las columnas de argumentos), así que no hay nada que validar de estilo.
 
 ## Renderizado fijo
 

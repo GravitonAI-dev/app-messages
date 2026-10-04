@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "enabled": true,
+  "label": {
+    "es": "Últimas Noticias",
+    "en": "Latest News"
+  },
+  "title": {
+    "es": "Lanzamiento del 24 de febrero",
+    "en": "February 24th release"
+  },
+  "intro": {
+    "es": "ConfidentialAI fue lanzado el 24 de febrero. Los cambios incluyen:",
+    "en": "ConfidentialAI was released on February 24th. Changes include:"
+  },
+  "sections": [
+    {
+      "title": {
+        "es": "Gestión de Documentos",
+        "en": "Document Management"
+      },
+      "items": [
+        {
+          "es": "Mayor capacidad: El límite por archivo ha aumentado de 35 a 180 páginas.",
+          "en": "Greater capacity: The limit per file has increased from 35 to 180 pages"
+        },
+        {
+          "es": "Lectura inteligente (OCR): Ahora el sistema puede leer texto dentro de imágenes o documentos escaneados.",
+          "en": "Smart reading (OCR): Now the system can read text within images or scanned documents"
+        },
+        {
+          "es": "Visor integrado: Abre y lee tus archivos PDF directamente en la aplicación.",
+          "en": "Built-in viewer: Open and read your PDF files directly in the application."
+        },
+        {
+          "es": "Control total: Ahora puedes editar o eliminar archivos sin que el sistema los bloquee.",
+          "en": "Full control: You can now edit or delete files without the system blocking them."
+        }
+      ]
+    },
+    {
+      "title": {
+        "es": "Privacidad y Seguridad",
+        "en": "Privacy and Security"
+      },
+      "items": [
+        {
+          "es": "Anonimización avanzada: Mejor detección de datos sensibles, como cuentas bancarias, tarjetas y direcciones.",
+          "en": "Advanced anonymization: Better detection of sensitive data, such as bank accounts, cards, and addresses."
+        },
+        {
+          "es": "Mayor precisión: El sistema identifica mejor qué información proteger y qué términos técnicos mantener visibles.",
+          "en": "Greater precision: The system better identifies which information to protect and which technical terms to keep visible."
+        }
+      ]
+    },
+    {
+      "title": {
+        "es": "Mejoras en el Chat",
+        "en": "Improvements in Chat"
+      },
+      "items": [
+        {
+          "es": "Respuestas precisas: La IA se enfoca mejor en el contenido del archivo que estás consultando.",
+          "en": "Accurate answers: AI focuses better on the content of the file you are consulting."
+        },
+        {
+          "es": "Uso de bibliotecas: Botón rápido para habilitar o deshabilitar el uso de sus documentos guardados en la consulta.",
+          "en": "Use of libraries: Quick button to enable or disable the use of your saved documents in the query."
+        },
+        {
+          "es": "Facilidad de uso: Las sugerencias de prompts se pegan automáticamente en el chat para su comodidad.",
+          "en": "Ease of use: The suggested prompts are automatically pasted into the chat for your convenience."
+        }
+      ]
+    },
+    {
+      "title": {
+        "es": "Rendimiento",
+        "en": "Performance"
+      },
+      "items": [
+        {
+          "es": "Aplicación más rápida: Se redujo el tiempo de inicio y se eliminaron errores visuales.",
+          "en": "Faster app: Startup time was reduced and visual errors were eliminated."
+        },
+        {
+          "es": "Simplicidad: Interfaz más limpia",
+          "en": "Simplicity: Cleaner interface"
+        },
+        {
+          "es": "Actualizaciones automáticas: para que siempre tengas la última versión.",
+          "en": "Automatic updates: so that you always have the latest version."
+        }
+      ]
+    }
+  ],
+  "banner": {
+    "es": "Tus documentos y conversaciones se guardan solo en este equipo.",
+    "en": "Your documents and conversations are stored only on this computer."
+  }
+}

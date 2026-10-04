@@ -180,6 +180,54 @@ function validateHref(where, href) {
   if (!/^https:\/\//.test(href)) fail(where, `href debe ser confai:// o https:// (${href})`);
 }
 
+// ---- Portada: los dos contenedores fijos (home/*.json) -----------------------
+// Están siempre en la pantalla de inicio (salvo `enabled: false`, que los
+// oculta); lo que cambia es el texto. Cada texto es un objeto por
+// idioma con "es" obligatorio; la app cae a "es" si falta su idioma.
+const HOME = { portada_centro_bajo: validateHomeFeatures, portada_derecha: validateHomeNews };
+if ('home' in index) {
+  if (!index.home || typeof index.home !== 'object') fail('index.json', '"home" debe ser un objeto');
+  else for (const [key, file] of Object.entries(index.home)) {
+    if (!(key in HOME)) { fail('index.json', `home: contenedor desconocido "${key}". Admitidos: ${Object.keys(HOME).join(', ')}`); continue; }
+    if (!existsSync(resolve(ROOT, file))) { fail('index.json', `home.${key} apunta a ${file}, que no existe`); continue; }
+    const doc = readJson(file);
+    if (!doc) continue;
+    if (doc.schema_version !== 1) fail(file, 'schema_version debe ser 1');
+    if ('enabled' in doc && typeof doc.enabled !== 'boolean') fail(file, 'enabled debe ser true o false');
+    HOME[key](file, doc);
+  }
+}
+
+function validateText(where, value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) { fail(where, 'debe ser un objeto por idioma, p. ej. {"es": "…", "en": "…"}'); return; }
+  if (typeof value.es !== 'string' || !value.es.trim()) fail(where, 'falta el texto en "es"');
+  for (const [lang, text] of Object.entries(value)) {
+    if (!/^[a-z]{2}$/.test(lang)) fail(where, `idioma "${lang}" inválido (dos letras minúsculas)`);
+    if (typeof text !== 'string' || !text.trim()) fail(where, `texto vacío en "${lang}"`);
+  }
+}
+
+function validateHomeFeatures(file, doc) {
+  if (!Array.isArray(doc.items) || doc.items.length < 1 || doc.items.length > 8) { fail(file, '"items" debe tener entre 1 y 8 argumentos'); return; }
+  doc.items.forEach((it, i) => {
+    const where = `${file} items[${i}]`;
+    if (typeof it.number !== 'string' || !it.number.trim()) fail(where, 'falta "number"');
+    validateText(`${where}.title`, it.title);
+    validateText(`${where}.subtitle`, it.subtitle);
+  });
+}
+
+function validateHomeNews(file, doc) {
+  for (const k of ['label', 'title', 'intro', 'banner']) validateText(`${file} ${k}`, doc[k]);
+  if (!Array.isArray(doc.sections) || doc.sections.length === 0) { fail(file, '"sections" debe tener al menos una sección'); return; }
+  doc.sections.forEach((s, i) => {
+    const where = `${file} sections[${i}]`;
+    validateText(`${where}.title`, s.title);
+    if (!Array.isArray(s.items) || s.items.length === 0) { fail(where, '"items" debe tener al menos un cambio'); return; }
+    s.items.forEach((t, j) => validateText(`${where}.items[${j}]`, t));
+  });
+}
+
 finish();
 
 function finish() {
@@ -188,6 +236,7 @@ function finish() {
     process.exit(1);
   }
   const n = Object.keys(index?.messages ?? {}).length;
-  console.log(`✓ ${n} mensaje(s) válidos`);
+  const h = Object.keys(index?.home ?? {}).length;
+  console.log(`✓ ${n} mensaje(s) válidos` + (h ? ` · ${h} contenedor(es) de portada` : ''));
   process.exit(0);
 }
