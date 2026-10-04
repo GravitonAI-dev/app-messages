@@ -102,6 +102,8 @@ async function load(id) {
   current = id;
   const idx = await (await fetch('../index.json')).json();
   const m = await (await fetch('../' + idx.messages[id])).json();
+  // El plan actual según el mensaje: Trial en los de prueba, Confidential en los de plan de pago
+  VARS.plan_name = (m.when?.['membership.plan_code'] === 'free_plan') ? 'Trial' : 'Confidential';
   let html = m.html ?? await (await fetch('../messages/' + m.html_file)).text();
   const t = THEMES[theme];
   html = html.replace(/\{\{\s*([a-zA-Z_.]+)\s*\}\}/g, (_, k) => k.startsWith('c.') ? (t[k.slice(2)] ?? 'magenta') : (VARS[k] ?? ''))

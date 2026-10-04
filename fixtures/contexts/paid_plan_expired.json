@@ -1,5 +1,5 @@
 {
-  "description": "Plan de pago caducado (no trial): sale el bloqueante genérico plan_expired, no el de fin de prueba",
+  "description": "Plan de pago caducado sin fecha conocida (max_days null, p. ej. por cuota): sale el genérico plan_expired, no el de fin de prueba ni el de fin de suscripción por tiempo",
   "context": {
     "usage.payment_status": "expired",
     "usage.usage_percentage": null,

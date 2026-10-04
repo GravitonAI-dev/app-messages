@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "id": "subscription_expired",
+  "enabled": true,
+  "when": {
+    "usage.payment_status": "expired",
+    "membership.plan_code": {
+      "neq": "free_plan"
+    },
+    "membership.days_left": {
+      "lte": 0
+    }
+  },
+  "size": "lg",
+  "position": "center",
+  "backdrop": "blur",
+  "dismissible": false,
+  "persistent": true,
+  "auto_close": 0,
+  "priority": 105,
+  "html_file": "subscription_expired.html",
+  "actions": [
+    {
+      "label": "Renovar {{plan_name}}",
+      "action": "checkout",
+      "variant": "primary"
+    }
+  ],
+  "footer_link": {
+    "label": "Acceder al perfil de usuario",
+    "action": "url",
+    "url": "https://confidentialai.es/dashboard/subscription"
+  }
+}

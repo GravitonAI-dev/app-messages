@@ -2,6 +2,7 @@
   "schema_version": 1,
   "messages": {
     "trial_expired": "messages/trial_expired.json",
+    "subscription_expired": "messages/subscription_expired.json",
     "plan_expired": "messages/plan_expired.json",
     "quota_exhausted": "messages/quota_exhausted.json",
     "purchase_success": "messages/purchase_success.json",

@@ -164,7 +164,8 @@ node scripts/test-fixtures.mjs
 | id | Cuándo | Marco | Tono |
 |---|---|---|---|
 | `trial_expired` | telemetría dice `expired` y el plan era el Trial | AppDialog, blur, persistente, sin X; gana a `plan_expired` | brand |
-| `plan_expired` | telemetría dice `expired` (plan de pago) | AppDialog, blur, persistente, sin X | danger |
+| `subscription_expired` | telemetría dice `expired`, plan de pago y `membership.days_left <= 0` (la suscripción caducó por tiempo: `max_days` 30/365 al pagar) | AppDialog, blur, persistente, sin X; mismo diseño que `trial_expired`, gana a `plan_expired` | brand |
+| `plan_expired` | telemetría dice `expired` en un plan de pago sin fecha conocida (`days_left` null o > 0: cuota agotada) | AppDialog, blur, persistente, sin X; respaldo | danger |
 | `quota_exhausted` | uso ≥ 100 % con plan vigente | AppDialog, sin blur, con X, vuelve mientras dure | warning |
 | `purchase_success` | plan de pago con menos de 24 h | AppDialog, blur, con X, una sola vez | success |
 | `trial_ending_soon` | trial con 2 días o menos | AppBanner abajo a la derecha, con X, se cierra a los 10 s | info |
