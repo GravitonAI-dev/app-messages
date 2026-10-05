@@ -1,8 +1,0 @@
-{
-  "name": "@app-messages/contract",
-  "private": true,
-  "description": "Contrato de app-messages (valores admitidos y semántica de when) compartido por el validador y el microservicio",
-  "type": "module",
-  "main": "index.mjs",
-  "types": "index.d.ts"
-}

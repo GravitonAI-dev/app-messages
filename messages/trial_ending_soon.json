@@ -2,16 +2,6 @@
   "schema_version": 1,
   "id": "trial_ending_soon",
   "enabled": true,
-  "when": {
-    "membership.plan_code": "free_plan",
-    "usage.payment_status": {
-      "neq": "expired"
-    },
-    "membership.days_left": {
-      "gte": 0,
-      "lte": 2
-    }
-  },
   "tone": "info",
   "size": "sm",
   "position": "bottom-right",

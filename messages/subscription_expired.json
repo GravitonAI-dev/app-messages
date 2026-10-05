@@ -2,15 +2,6 @@
   "schema_version": 1,
   "id": "subscription_expired",
   "enabled": true,
-  "when": {
-    "usage.payment_status": "expired",
-    "membership.plan_code": {
-      "neq": "free_plan"
-    },
-    "membership.days_left": {
-      "lte": 0
-    }
-  },
   "size": "lg",
   "position": "center",
   "backdrop": "blur",

@@ -1,13 +1,13 @@
 import { createHash } from 'crypto';
 import { readFile, readdir, stat } from 'fs/promises';
 import { extname, join, relative, sep } from 'path';
-import { ContentPort, type HomeContainer, type LoadedMessage, type RawFile } from '../../application/ports/content.port';
+import { ContentPort, type HomeContainer, type RawFile } from '../../application/ports/content.port';
 import { createLogger } from '../logging/logger';
 
 const log = createLogger('FsContentStore');
 
-/** Lo que se publica en /raw: el contrato de la app, sus imágenes y la vista previa. */
-const PUBLISHED = ['index.json', 'messages', 'home', 'assets', 'preview', 'templates'];
+/** Lo que se publica en /raw: el catálogo de códigos, los mensajes, sus imágenes y la vista previa. */
+const PUBLISHED = ['index.json', 'codes.json', 'messages', 'home', 'assets', 'preview', 'templates'];
 
 const TYPES: Record<string, string> = {
   '.json': 'application/json; charset=utf-8',
@@ -24,7 +24,6 @@ const TYPES: Record<string, string> = {
 interface Snapshot {
   version: string;
   files: Map<string, RawFile>;
-  messages: LoadedMessage[];
   home: Record<string, HomeContainer>;
 }
 
@@ -50,10 +49,6 @@ export class FsContentStore extends ContentPort {
     return this.snapshot.files.get(path) ?? null;
   }
 
-  messages() {
-    return this.snapshot.messages;
-  }
-
   home() {
     return this.snapshot.home;
   }
@@ -73,10 +68,14 @@ export class FsContentStore extends ContentPort {
       return f.body.toString('utf8');
     };
 
-    const index = json<{ messages?: Record<string, string>; home?: Record<string, string> }>('index.json');
+    // Se lee todo lo que la app va a pedir: un JSON roto o un fichero que
+    // falta hace fallar la recarga y se sigue sirviendo el contenido anterior.
+    const index = json<{ codes?: string; messages?: Record<string, string>; home?: Record<string, string> }>('index.json');
+    json(index.codes ?? 'codes.json');
     const messages = Object.values(index.messages ?? {}).map((path) => {
-      const m = json<LoadedMessage>(path);
-      return { ...m, html: m.html_file ? text(`messages/${m.html_file}`) : (m.html ?? '') };
+      const m = json<{ html_file?: string }>(path);
+      if (m.html_file) text(`messages/${m.html_file}`);
+      return m;
     });
     const home = Object.fromEntries(Object.entries(index.home ?? {}).map(([key, path]) => [key, json<HomeContainer>(path)]));
 
@@ -85,7 +84,7 @@ export class FsContentStore extends ContentPort {
       .digest('hex')
       .slice(0, 12);
 
-    this.snapshot = { version, files, messages, home };
+    this.snapshot = { version, files, home };
     log.info({ version, files: files.size, messages: messages.length }, 'contenido cargado');
   }
 

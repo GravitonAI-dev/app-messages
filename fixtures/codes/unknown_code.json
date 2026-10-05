@@ -1,0 +1,5 @@
+{
+  "description": "Un código que el catálogo aún no conoce (la cuota llegará con la ventana de tokens): se ignora",
+  "codes": [{ "code": "QUOTA_EXHAUSTED.INPUT_TOKENS_LIMIT_REACHED", "params": { "plan_code": "free_plan" } }],
+  "expected": { "block": false, "visible_now": [], "queue": [] }
+}

@@ -104,8 +104,15 @@ async function load(id) {
   current = id;
   const idx = await (await fetch('../index.json')).json();
   const m = await (await fetch('../' + idx.messages[id])).json();
-  // El plan actual según el mensaje: Trial en los de prueba, Confidential en los de plan de pago
-  VARS.plan_name = (m.when?.['membership.plan_code'] === 'free_plan') ? 'Trial' : 'Confidential';
+  // Los códigos de codes.json que llevan a este mensaje (y para qué plan)
+  const catalog = await (await fetch('../' + (idx.codes ?? 'codes.json'))).json();
+  const via = [];
+  for (const [code, e] of Object.entries(catalog.codes ?? {})) {
+    if (e.message === id) via.push(code);
+    else if (e.message && typeof e.message === 'object') for (const [plan, mid] of Object.entries(e.message)) if (mid === id) via.push(`${code} (${plan})`);
+  }
+  // El plan actual según el mensaje: Trial si sale para free_plan, Confidential si no
+  VARS.plan_name = via.some((v) => v.includes('(free_plan)')) ? 'Trial' : 'Confidential';
   let html = m.html ?? await (await fetch('../messages/' + m.html_file)).text();
   const t = THEMES[theme];
   html = html.replace(/\{\{\s*([a-zA-Z_.]+)\s*\}\}/g, (_, k) => k.startsWith('c.') ? (t[k.slice(2)] ?? 'magenta') : (VARS[k] ?? ''))
@@ -129,7 +136,7 @@ async function load(id) {
   }
   document.getElementById('blur').hidden = m.backdrop !== 'blur';
   document.getElementById('props').textContent = `${corner ? 'AppBanner' : 'AppDialog'} · ${m.size} · ${m.position} · ${m.backdrop} · ${m.dismissible ? 'con X' : 'sin X'} · ${m.persistent ? 'persistente' : 'una vez'}${m.auto_close ? ' · se cierra a los ' + m.auto_close + ' s' : ''} · prioridad ${m.priority}`;
-  document.getElementById('meta').textContent = 'when: ' + JSON.stringify(m.when);
+  document.getElementById('meta').textContent = 'códigos: ' + (via.length ? via.join(', ') : 'ninguno');
   card.querySelectorAll('a[href^="confai://"]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); document.getElementById('meta').textContent = 'acción: ' + a.getAttribute('href'); }));
   history.replaceState(null, '', `?m=${id}&theme=${theme}`);
 }

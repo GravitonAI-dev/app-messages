@@ -1,12 +1,12 @@
 // Validador del repo de mensajes. Sin dependencias: node >= 20.
-// Comprueba índice, ficheros de mensaje, condiciones, HTML admitido, acciones y variables.
+// Comprueba índice, catálogo de códigos, ficheros de mensaje, HTML admitido, acciones y variables.
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  SIZES, POSITIONS, BACKDROPS, OPERATORS, CONTEXT_FIELDS, PLAN_CODES, ACTIONS, VARIANTS,
+  SIZES, POSITIONS, BACKDROPS, PLAN_CODES, ACTIONS, VARIANTS,
   TONES, CORNER, TAGS, ATTRS, STYLE_PROPS, HOME_CONTAINERS, HOME_ACTIONS, HOME_ICONS,
-  VARIABLE_RE, parseFilters, checkVariable,
+  VARIABLE_RE, checkVariable,
 } from './core/contract.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -30,6 +30,41 @@ for (const [code, file] of Object.entries(index.messages)) {
   validateMessage(code, file);
 }
 
+// ---- Catálogo de códigos (codes.json) ---------------------------------------
+// Para cada código de estado (telemetría, Gateway), qué mensaje se enseña y si
+// bloquea. Ver docs/codigos-de-estado.md.
+const CODE_KEY = /^(?:[A-Z][A-Z0-9_]*)(?:\.(?:[A-Z][A-Z0-9_]*|[a-z][a-z0-9_]*))*(?:\.\*)?$/;
+const CODE_FIELDS = ['priority', 'block', 'recheck', 'message'];
+if (!index.codes) fail('index.json', 'falta "codes" (la ruta de codes.json)');
+else if (!existsSync(resolve(ROOT, index.codes))) fail('index.json', `"codes" apunta a ${index.codes}, que no existe`);
+else validateCatalog(index.codes, readJson(index.codes));
+
+function validateCatalog(where, catalog) {
+  if (!catalog) return;
+  if (catalog.schema_version !== 1) fail(where, 'schema_version debe ser 1');
+  if (!catalog.codes || typeof catalog.codes !== 'object' || Array.isArray(catalog.codes)) { fail(where, 'falta "codes"'); return; }
+  for (const [code, entry] of Object.entries(catalog.codes)) {
+    if (!CODE_KEY.test(code)) fail(where, `código "${code}" inválido (SITUACIÓN.MOTIVO en mayúsculas; el último tramo puede ser * o un constraint del Gateway)`);
+    validateCodeEntry(`${where} codes["${code}"]`, entry);
+  }
+  if (catalog.fallback !== null && catalog.fallback !== undefined) validateCodeEntry(`${where} fallback`, catalog.fallback);
+}
+
+function validateCodeEntry(where, entry) {
+  if (!entry || typeof entry !== 'object' || Array.isArray(entry)) { fail(where, 'debe ser un objeto'); return; }
+  for (const k of Object.keys(entry)) if (!CODE_FIELDS.includes(k)) fail(where, `campo desconocido "${k}". Admitidos: ${CODE_FIELDS.join(', ')}`);
+  if (typeof entry.block !== 'boolean') fail(where, 'block debe ser true o false');
+  if (!(Number.isInteger(entry.priority) && entry.priority >= 0 && entry.priority <= 1000)) fail(where, 'priority debe ser un entero 0-1000');
+  if ('recheck' in entry && typeof entry.recheck !== 'boolean') fail(where, 'recheck debe ser true o false');
+  const ids = typeof entry.message === 'string' ? [entry.message]
+    : entry.message && typeof entry.message === 'object' && !Array.isArray(entry.message) ? Object.values(entry.message) : null;
+  if (!ids || ids.length === 0) { fail(where, 'message debe ser un id de mensaje o un objeto { plan_code: id, "*": id }'); return; }
+  if (typeof entry.message === 'object') for (const plan of Object.keys(entry.message)) {
+    if (plan !== '*' && !/^[a-z][a-z0-9_]*$/.test(plan)) fail(where, `message: plan "${plan}" inválido`);
+  }
+  for (const id of ids) if (!(id in index.messages)) fail(where, `message "${id}" no existe en index.json`);
+}
+
 function validateMessage(code, file) {
   const m = readJson(file);
   if (!m) return;
@@ -39,14 +74,8 @@ function validateMessage(code, file) {
   if (m.id !== code) fail(where, `id "${m.id}" no coincide con el código del índice "${code}"`);
   if ('enabled' in m && typeof m.enabled !== 'boolean') fail(where, 'enabled debe ser true o false');
 
-  if (!m.when || typeof m.when !== 'object' || Object.keys(m.when).length === 0) fail(where, 'falta "when" con al menos una condición');
-  else for (const [field, cond] of Object.entries(m.when)) {
-    if (!CONTEXT_FIELDS.includes(field)) fail(where, `when: campo desconocido "${field}". Admitidos: ${CONTEXT_FIELDS.join(', ')}`);
-    if (cond !== null && typeof cond === 'object' && !Array.isArray(cond)) {
-      for (const op of Object.keys(cond)) if (!OPERATORS.includes(op)) fail(where, `when.${field}: operador desconocido "${op}"`);
-      if (Object.keys(cond).length === 0) fail(where, `when.${field}: condición vacía`);
-    }
-  }
+  // Qué mensaje sale y cuándo lo dice codes.json, no el mensaje.
+  if ('when' in m) fail(where, '"when" ya no existe: cuándo sale un mensaje lo decide codes.json');
 
   if (!(SIZES.includes(m.size) || (Number.isInteger(m.size) && m.size >= 240 && m.size <= 1200))) fail(where, `size "${m.size}" inválido (sm, md, lg o 240-1200 px)`);
   if (!POSITIONS.includes(m.position)) fail(where, `position "${m.position}" inválido`);
@@ -139,7 +168,7 @@ function validateHtml(where, html) {
 // Cada {{…}} del texto tiene que ser una variable conocida con filtros válidos;
 // unas llaves que no encajan con la sintaxis también son un error.
 function checkVariables(where, what, text, options) {
-  for (const v of text.matchAll(VARIABLE_RE)) for (const p of checkVariable(v[1], parseFilters(v[2]), options)) fail(where, `${what}: ${p}`);
+  for (const v of text.matchAll(VARIABLE_RE)) for (const p of checkVariable(v[1], v[2], options)) fail(where, `${what}: ${p}`);
   const rest = text.replace(VARIABLE_RE, '');
   for (const bad of rest.matchAll(/\{\{[^}]*\}\}/g)) fail(where, `${what}: variable mal escrita ${bad[0]}`);
 }

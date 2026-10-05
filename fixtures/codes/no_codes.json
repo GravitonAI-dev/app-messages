@@ -1,0 +1,5 @@
+{
+  "description": "Cuenta sana (o trial sin cuota con días por delante, por ahora sin código): nada",
+  "codes": [],
+  "expected": { "block": false, "visible_now": [], "queue": [] }
+}

@@ -1,0 +1,6 @@
+<!-- payment_failed · cuerpo del AppDialog. Sale con PLAN_REVOKED: Stripe terminó la suscripción porque el cobro falló tras todos los reintentos y no queda otro plan ni trial en vigor. Tono danger en el estado. Una cancelación NO llega aquí: el plan sigue hasta su fecha. -->
+<p style="margin:0 0 14px 0;text-align:left;font-size:12.5px;line-height:1.5;color:{{c.textSecondary}};">Hola, <strong style="color:{{c.textPrimary}};">{{user_name}}</strong>. No hemos podido cobrar la renovación de tu suscripción y tu cuenta está en pausa. Revisa tu método de pago o elige un plan para seguir usando ConfAI. Tus documentos, clientes y librerías siguen guardados.</p>
+<table style="width:100%;background:{{c.surfaceRaised}};border:1px solid {{c.border}};border-radius:10px;padding:2px 12px;margin:0 0 0px 0;font-size:12.5px;">
+  <tr><td style="padding:8px 0;text-align:left;color:{{c.textMuted}};">Estado del pago</td><td style="padding:8px 0;text-align:right;color:{{c.dangerText}};font-weight:700;">No completado</td></tr>
+  <tr><td style="padding:8px 0;text-align:left;color:{{c.textMuted}};border-top:1px solid {{c.divider}};">Tu cuenta</td><td style="padding:8px 0;text-align:right;color:{{c.textPrimary}};font-weight:600;border-top:1px solid {{c.divider}};">En pausa</td></tr>
+</table>

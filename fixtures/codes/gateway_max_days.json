@@ -1,0 +1,5 @@
+{
+  "description": "El Gateway rechaza por max_days antes de que telemetría lo diga: muro genérico y la app vuelve a preguntar a telemetría",
+  "codes": [{ "code": "GATEWAY.INSUFFICIENT_CAPABILITY.max_days", "params": {} }],
+  "expected": { "block": true, "visible_now": ["plan_expired"], "queue": ["plan_expired"] }
+}

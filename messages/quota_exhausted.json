@@ -2,14 +2,6 @@
   "schema_version": 1,
   "id": "quota_exhausted",
   "enabled": true,
-  "when": {
-    "usage.payment_status": {
-      "neq": "expired"
-    },
-    "usage.usage_percentage": {
-      "gte": 100
-    }
-  },
   "title": "Has agotado tu cuota de IA",
   "size": "md",
   "position": "bottom",

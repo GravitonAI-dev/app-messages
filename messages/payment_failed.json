@@ -1,24 +1,24 @@
 {
   "schema_version": 1,
-  "id": "plan_expired",
+  "id": "payment_failed",
   "enabled": true,
-  "title": "Tu plan ha caducado",
+  "title": "No hemos podido cobrar tu suscripción",
   "size": "md",
   "position": "center",
   "backdrop": "blur",
   "dismissible": false,
   "persistent": true,
   "auto_close": 0,
-  "priority": 100,
-  "html_file": "plan_expired.html",
+  "priority": 105,
+  "html_file": "payment_failed.html",
   "actions": [
     {
-      "label": "Ya lo he renovado",
+      "label": "Ya lo he pagado",
       "action": "recheck",
       "variant": "secondary"
     },
     {
-      "label": "Renovar mi plan",
+      "label": "Revisar el pago",
       "action": "checkout",
       "variant": "primary"
     }

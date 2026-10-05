@@ -11,9 +11,6 @@ async function bootstrap() {
     logger: ['error', 'warn', 'log'],
     cors: { origin: '*' },
   });
-  // Detrás del proxy inverso del VPS: la IP real para el límite de peticiones.
-  app.set('trust proxy', 1);
-  app.useBodyParser('json', { limit: '32kb' });
   app.enableShutdownHooks();
 
   await app.listen(config.PORT);

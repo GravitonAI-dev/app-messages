@@ -1,0 +1,20 @@
+{
+  "description": "Suscripción impagada (Stripe la terminó) sin otro plan en vigor: muro. Con un trial o un plan en vigor, telemetría responde con ese y no hay código",
+  "codes": [
+    {
+      "code": "PLAN_REVOKED",
+      "params": {
+        "plan_code": "basic_plan"
+      }
+    }
+  ],
+  "expected": {
+    "block": true,
+    "visible_now": [
+      "payment_failed"
+    ],
+    "queue": [
+      "payment_failed"
+    ]
+  }
+}

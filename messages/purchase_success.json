@@ -2,15 +2,6 @@
   "schema_version": 1,
   "id": "purchase_success",
   "enabled": true,
-  "when": {
-    "membership.payment_status": "paid",
-    "membership.plan_code": {
-      "neq": "free_plan"
-    },
-    "membership.hours_since_start": {
-      "lte": 24
-    }
-  },
   "title": "Compra completada",
   "size": "md",
   "position": "center",

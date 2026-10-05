@@ -1,0 +1,5 @@
+{
+  "description": "Al trial le quedan 2 días: aviso, sin bloquear",
+  "codes": [{ "code": "PLAN_EXPIRING_SOON", "params": { "plan_code": "free_plan", "expires_at": "2026-10-07T10:00:00Z", "days_left": 2 } }],
+  "expected": { "block": false, "visible_now": ["trial_ending_soon"], "queue": ["trial_ending_soon"] }
+}

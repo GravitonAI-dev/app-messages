@@ -1,10 +1,9 @@
-# Se construye desde la raíz del repo: el contenido (index.json, messages/…)
+# Se construye desde la raíz del repo: el contenido (index.json, codes.json, messages/…)
 # va dentro de la imagen, así que publicar un mensaje es desplegar la imagen.
 #   docker build -f server/Dockerfile .
 FROM node:22-alpine AS builder
 WORKDIR /repo
 RUN corepack enable
-COPY scripts/core ./scripts/core
 COPY server/package.json server/pnpm-lock.yaml ./server/
 RUN cd server && pnpm install --frozen-lockfile
 COPY server/tsconfig.json ./server/
@@ -14,8 +13,7 @@ RUN cd server && pnpm build && pnpm prune --prod
 FROM node:22-alpine
 ENV NODE_ENV=production CONTENT_DIR=/repo PORT=3000
 WORKDIR /repo
-COPY scripts/core ./scripts/core
-COPY index.json ./
+COPY index.json codes.json ./
 COPY messages ./messages
 COPY home ./home
 COPY assets ./assets

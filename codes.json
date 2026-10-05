@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "codes": {
+    "PLAN_EXPIRED.DAYS_LIMIT_REACHED": {
+      "priority": 110,
+      "block": true,
+      "message": {
+        "free_plan": "trial_expired",
+        "*": "subscription_expired"
+      }
+    },
+    "PLAN_REVOKED": {
+      "priority": 105,
+      "block": true,
+      "message": "payment_failed"
+    },
+    "GATEWAY.INSUFFICIENT_CAPABILITY.max_days": {
+      "priority": 100,
+      "block": true,
+      "recheck": true,
+      "message": "plan_expired"
+    },
+    "PLAN_EXPIRING_SOON": {
+      "priority": 20,
+      "block": false,
+      "message": {
+        "free_plan": "trial_ending_soon"
+      }
+    }
+  },
+  "fallback": null
+}

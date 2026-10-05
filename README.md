@@ -2,22 +2,24 @@
 
 Mensajes que la app de escritorio ConfAI muestra a los usuarios (plan caducado, cuota agotada, compra completada, avisos). Viven aquí, fuera del binario: editar un fichero en `main` cambia lo que ven todos los usuarios en la siguiente comprobación de la app, sin release y sin tocar telemetría ni billing.
 
-Los sirve el microservicio de `server/` (ver «Microservicio»), desplegado en el VPS. Cada push a `main` publica una imagen nueva con el contenido dentro. La app los pide ya evaluados y con las variables puestas a `POST /v1/messages`. Si no hay conexión, usa los ficheros en crudo de `/raw/` (las mismas rutas que el repo) o su caché, y los evalúa ella misma.
+Los sirve el microservicio de `server/` (ver «Microservicio») en `https://messages.confai.app/raw/`, con las mismas rutas que el repo. Cada push a `main` publica una imagen nueva con el contenido dentro.
 
 ## Cómo funciona
 
-1. La app consulta el estado de la cuenta (telemetría `/api/user-usage` y billing `userInfo`) y construye un contexto con campos como `usage.payment_status` o `membership.days_left`.
-2. Descarga `index.json` y cada `messages/<id>.json`.
-3. Para cada mensaje evalúa su `when` contra el contexto. Los que cumplen se muestran, ordenados por `priority`.
-4. Pinta cada uno con los componentes del design system de la app: los centrados son un `AppDialog` (título del JSON en la cabecera, X si se puede cerrar, el HTML como cuerpo, `AppButton` en el pie y `AppLink` a la izquierda del pie); los de esquina son un `AppBanner` (tono, icono, el HTML como texto y un botón pequeño). Blur, tamaño y posición los pone el envoltorio.
+La app no decide nada (ver `docs/codigos-de-estado.md`):
 
-Regla fija de la app, no configurable desde aquí: si telemetría devuelve `payment_status: expired`, la app bloquea con blur siempre, aunque no consiga descargar nada. Dentro del blur pinta el mensaje bloqueante de mayor prioridad que cumpla su `when` (`trial_expired` o `plan_expired`) y, si no tiene ninguno, un mensaje embebido por defecto.
+1. **Telemetría y el Gateway dicen qué ha pasado con códigos de estado.** Telemetría los da en `GET /api/user-usage/{uid}` → `status_codes` (p. ej. `PLAN_EXPIRED.DAYS_LIMIT_REACHED`); el Gateway, en sus errores (`INSUFFICIENT_CAPABILITY` + `constraintCode: max_days`, que la app lee como `GATEWAY.INSUFFICIENT_CAPABILITY.max_days`). Cada código trae sus datos en `params` (plan, fechas…).
+2. **`codes.json` (este repo) dice qué hacer con cada código:** qué mensaje se enseña (puede depender de `params.plan_code`), con qué prioridad y si bloquea la app.
+3. **La app busca sus códigos en `codes.json`, descarga los mensajes y los pinta** con los componentes del design system: los centrados son un `AppDialog` (título del JSON en la cabecera, X si se puede cerrar, el HTML como cuerpo, `AppButton` en el pie y `AppLink` a la izquierda del pie); los de esquina, un `AppBanner`. Si alguna entrada tiene `block: true`, pone el muro.
+
+Sin conexión la app usa los últimos códigos y los ficheros que tiene en caché. Bloquear de verdad lo sigue haciendo el Gateway, que rechaza las peticiones de un plan caducado.
 
 ## Estructura
 
 ```
-index.json                 qué mensajes existen y dónde están
-messages/<id>.json         propiedades del contenedor + condición
+index.json                 qué mensajes existen y dónde están, y dónde está el catálogo
+codes.json                 catálogo de códigos de estado: qué mensaje y si bloquea (ver «Códigos de estado»)
+messages/<id>.json         propiedades del contenedor
 messages/<id>.html         el contenido
 home/<contenedor>.json     los dos contenedores fijos de la portada, en bloques (ver «Portada»)
 templates/card.html        cuerpo de ejemplo con los patrones del design system de la app
@@ -26,10 +28,11 @@ templates/tones.md         roles de color {{c.*}} (claro/oscuro), tonos y medida
 schema/message.schema.json esquema del JSON de un mensaje
 scripts/validate.mjs       validador (lo ejecuta la CI en cada push)
 preview/index.html         vista previa: simula la app y pinta un mensaje en su contenedor
-scripts/evaluate.mjs       evaluador de referencia: contexto → mensajes visibles (la app debe dar lo mismo)
-fixtures/contexts/*.json   contextos de prueba con el resultado esperado (node scripts/test-fixtures.mjs)
-scripts/core/              el contrato compartido: valores admitidos, gramática de variables y semántica de when
-server/                    el microservicio (NestJS) que sirve y evalúa los mensajes
+scripts/evaluate.mjs       evaluador de referencia: códigos → mensajes visibles y bloqueo (la app debe dar lo mismo)
+fixtures/codes/*.json      códigos de prueba con el resultado esperado (node scripts/test-fixtures.mjs)
+scripts/core/              el contrato: valores admitidos, variables y búsqueda en el catálogo
+server/                    el microservicio (NestJS) que sirve el contenido
+docs/codigos-de-estado.md  los códigos de estado: quién los emite, qué significan, qué falta
 ```
 
 ## Crear un mensaje
@@ -42,7 +45,6 @@ server/                    el microservicio (NestJS) que sirve y evalúa los men
   "schema_version": 1,
   "id": "mi_mensaje",
   "enabled": true,
-  "when": { "membership.plan_code": "free_plan", "membership.days_left": { "lte": 2 } },
   "size": "md",
   "position": "center",
   "backdrop": "none",
@@ -55,11 +57,12 @@ server/                    el microservicio (NestJS) que sirve y evalúa los men
 ```
 
 3. Añádelo a `index.json`: `"mi_mensaje": "messages/mi_mensaje.json"`.
-4. `node scripts/validate.mjs` (o espera a la CI). En verde, merge a `main` y listo.
+4. Dile a `codes.json` con qué código sale (ver «Códigos de estado»).
+5. `node scripts/validate.mjs` (o espera a la CI). En verde, merge a `main` y listo.
 
 ## Portada
 
-Además de los mensajes, la pantalla de inicio tiene dos contenedores **fijos**: no dependen de la cuenta ni llevan `when`. Se declaran en `index.json` bajo `home`:
+Además de los mensajes, la pantalla de inicio tiene dos contenedores **fijos**: no dependen de la cuenta ni de ningún código. Se declaran en `index.json` bajo `home`:
 
 ```json
 "home": {
@@ -114,38 +117,44 @@ Un mensaje se ve exactamente igual que en `preview/` en cualquier ventana o moni
 | `position` | `center`, `top`, `bottom`, `top-right`, `bottom-right` | Dónde se coloca |
 | `backdrop` | `blur`, `none` | Con blur la app queda tapada y no se puede usar detrás |
 | `dismissible` | `true`, `false` | Si tiene X y se puede cerrar |
-| `persistent` | `true`, `false` | `true`: vuelve a salir en cada comprobación mientras se cumpla `when`. `false`: una vez cerrado no vuelve |
+| `persistent` | `true`, `false` | `true`: vuelve a salir en cada comprobación mientras siga llegando su código. `false`: una vez cerrado no vuelve |
 | `auto_close` | segundos, `0` = no | Se cierra solo (solo con `dismissible: true`). Cuenta como cierre: con `persistent: false` no vuelve a salir |
-| `priority` | 0-1000 | Si coinciden varios, el más alto primero. Si hay uno con blur visible, los demás esperan |
+| `priority` | 0-1000 | Sin uso: el orden lo pone la `priority` de la entrada de `codes.json` |
 | `enabled` | `true`, `false` | Apagar un mensaje sin borrarlo |
 | `title` | texto | Título en la cabecera del AppDialog. Opcional: sin él, el diálogo no tiene cabecera y el cuerpo lleva su propio encabezado |
 | `tone` | `info`, `success`, `warning`, `danger` | Color e icono del AppBanner. Obligatorio en mensajes de esquina |
 | `actions` | lista de 1 a 3 `{label, action, url?, variant}` | Botones del pie, de izquierda a derecha. El primario a la derecha |
 | `footer_link` | `{label, action}` | Enlace a la izquierda del pie |
 
-Un mensaje con blur y sin X debe ser `persistent: true`, llevar al menos un botón y no puede llevar un botón `dismiss`: solo se quita cuando deja de cumplirse su `when`.
+Un mensaje con blur y sin X debe ser `persistent: true`, llevar al menos un botón y no puede llevar un botón `dismiss`: solo se quita cuando deja de llegar su código.
 
-## Condición `when`
+## Códigos de estado (`codes.json`)
 
-Todas las claves deben cumplirse. Valor directo = igualdad; objeto = operadores `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `in`, `exists`.
+Para cada código, qué mensaje sale, en qué orden y si bloquea. Los códigos, quién los emite y sus `params` están en `docs/codigos-de-estado.md`.
 
-Campos del contexto que la app expone:
+```json
+{
+  "schema_version": 1,
+  "codes": {
+    "PLAN_EXPIRED.DAYS_LIMIT_REACHED":          { "priority": 110, "block": true, "message": { "free_plan": "trial_expired", "*": "subscription_expired" } },
+    "PLAN_REVOKED":                             { "priority": 105, "block": true, "message": "payment_failed" },
+    "GATEWAY.INSUFFICIENT_CAPABILITY.max_days": { "priority": 100, "block": true, "recheck": true, "message": "plan_expired" },
+    "PLAN_EXPIRING_SOON":                       { "priority": 20,  "block": false, "message": { "free_plan": "trial_ending_soon" } }
+  },
+  "fallback": null
+}
+```
 
-| Campo | Origen | Ejemplo |
-|---|---|---|
-| `usage.payment_status` | telemetría | `"paid"`, `"expired"` |
-| `usage.usage_percentage` | telemetría | `87.5`, `null` si no hay métrica |
-| `usage.has_constraints` | telemetría | `true` |
-| `usage.used`, `usage.limit` | telemetría | tokens |
-| `membership.payment_status` | billing | `"paid"` (billing no se entera del `expired`) |
-| `membership.plan_code` | billing | `"free_plan"`, `"basic_plan"`, `"pro_plan"`, `"lex_pro_plan"` |
-| `membership.plan_name` | billing | `"Trial"`, `"Confidential"` |
-| `membership.created_at` | billing | ISO 8601 |
-| `membership.max_days` | billing | `7`, `null` si el plan no caduca por días |
-| `membership.expires_at` | calculado | `created_at + max_days`, ISO 8601 |
-| `membership.days_left` | calculado | entero, negativo si ya pasó |
-| `membership.hours_since_start` | calculado | horas desde `created_at` |
-| `app.version`, `app.platform` | app | `"1.4.2"`, `"macos"` |
+| Campo | Qué es |
+|---|---|
+| `message` | El id de un mensaje de `index.json`, o un objeto por `params.plan_code` con `*` por defecto. Sin variante para el plan, el código no enseña nada |
+| `block` | `true`: la app queda tapada mientras llegue el código |
+| `priority` | Si llegan varios, el mayor primero; con uno que bloquea, el resto espera. Si dos códigos llevan al mismo mensaje, cuenta el de más prioridad |
+| `recheck` | Al recibirlo la app vuelve a preguntar a telemetría. El Gateway no sabe el plan; telemetría contesta enseguida con `PLAN_EXPIRED` (110), que gana a este (100) con el mensaje de su plan |
+| `X.*` | Comodín: cualquier motivo de esa situación. Gana la clave exacta |
+| `fallback` | Qué hacer con un código desconocido: `null` = nada |
+
+Hoy cubre el plan caducado por fecha, el trial a punto de acabar y la suscripción impagada. La cuota (`QUOTA_EXHAUSTED.*`) llegará con la ventana de tokens. Cancelar una suscripción no tiene código propio: el plan sigue hasta su fecha (ver `docs/codigos-de-estado.md`, «Cancelación»).
 
 ## HTML admitido
 
@@ -171,65 +180,34 @@ En el HTML solo se admiten enlaces `https://` normales dentro del texto.
 
 ## Variables
 
-Se sustituyen antes de pintar, en el HTML y también en `title` y en las etiquetas de `actions` y `footer_link`. Lo hace el servicio en `/v1/messages`, o la app cuando trabaja sin conexión. En el HTML los valores van escapados: un nombre de usuario no puede meter etiquetas.
-
-Sintaxis: `{{ nombre }}`, con filtros opcionales: `{{ nombre | filtro | filtro:arg }}`. Lo que no se conoce sale como «—».
+La app las sustituye antes de pintar, en el HTML y también en `title` y en las etiquetas de `actions` y `footer_link`. En el HTML los valores van escapados. Lo que no se conoce sale como «—».
 
 | Variable | Qué es |
 |---|---|
-| `{{user.name}}`, `{{user.email}}` | Nombre (billing y, si no hay, el de la sesión) y correo |
-| `{{membership.*}}`, `{{usage.*}}` | Cualquier campo del contexto de `when` (ver la tabla de abajo), p. ej. `{{membership.days_left}}` |
-| `{{usage_reset}}` | Cuándo se renueva la cuota: «mañana a las 00:00». Sin dato de telemetría, «al empezar tu próximo periodo» |
-| `{{usage_since}}` | Desde cuándo cuenta el consumo: «desde el 13 de septiembre». Sin dato, «en este periodo» |
-| `{{plan.<código>.name}}` | Nombre comercial del plan según billing (`getPlans` → `display_name`): `plan.basic_plan.name`, `plan.pro_plan.name`, `plan.lex_pro_plan.name`. Los nombres de plan nunca se escriben a mano |
-| `{{app.version}}`, `{{app.platform}}`, `{{app.<clave>}}` | Datos de la app. Las claves `app.*` extra las manda la app en `vars`; es lo único que puede inyectar |
-| `{{asset_url}}` | Base pública de `assets/` en el servicio, p. ej. `<img src="{{asset_url}}/logo.png">` |
+| `{{user_name}}`, `{{user.name}}` | Nombre del usuario (billing y, si no hay, el de la sesión) |
+| `{{plan_name}}` | Nombre del plan actual |
+| `{{plan.<código>.name}}` | Nombre comercial de un plan según billing (`getPlans` → `display_name`): `plan.basic_plan.name`, `plan.pro_plan.name`, `plan.lex_pro_plan.name`. Los nombres de plan nunca se escriben a mano |
+| `{{params.<clave>}}` | Un dato del código que trajo el mensaje, tal cual (p. ej. `{{params.max_days}}`) |
+| `{{plan_end_date}}` | `params.expires_at` como fecha larga: «9 de octubre de 2026» |
+| `{{days_left}}` | `params.days_left` |
+| `{{usage_percentage}}` | `params.usage_percentage`, redondeado |
+| `{{usage_reset}}`, `{{usage_since}}` | Cuándo se renueva la cuota y desde cuándo cuenta. Pendientes de la ventana de tokens: hoy, texto genérico |
 
-| Filtro | Ejemplo | Resultado |
-|---|---|---|
-| `date:long` / `date:short` | `{{membership.expires_at \| date:long}}` | `2 de octubre de 2026` / `02/10/2026` (idioma y zona horaria del usuario) |
-| `number[:decimales]` | `{{usage.usage_percentage \| number:1}}` | `87,5` |
-| `percent[:decimales]` | `{{usage.usage_percentage \| percent}}` | `88 %` |
-| `upper`, `lower` | `{{user.name \| upper}}` | `ANA` |
-| `default:"texto"` | `{{user.name \| default:"de nuevo"}}` | el texto si el valor no existe |
+Los filtros (`{{x | date}}`) están reservados: la app aún no los entiende y el validador los rechaza.
 
-Siguen valiendo los nombres de antes: `{{user_name}}`, `{{plan_name}}`, `{{plan_end_date}}` (= `membership.expires_at | date:long`), `{{days_left}}` y `{{usage_percentage}}` (= `usage.usage_percentage | number`).
-
-Y los colores: `{{c.<rol>}}` sólo en el HTML y sin filtros. Los resuelve siempre la app con `context.colors` del tema activo (claro u oscuro). Roles y valores en `templates/tones.md`. El validador rechaza colores fijos en `color`, `background` y `border`.
+Y los colores: `{{c.<rol>}}` sólo en el HTML. Los resuelve la app con `context.colors` del tema activo (claro u oscuro). Roles y valores en `templates/tones.md`. El validador rechaza colores fijos en `color`, `background` y `border`.
 
 ## Microservicio
 
-`server/` es un NestJS que carga en memoria el contenido del repo (el de la imagen) y lo sirve.
+`server/` es un NestJS que carga en memoria el contenido del repo (el de la imagen) y lo sirve. No evalúa nada: eso lo hace la app con `codes.json`.
 
-| Endpoint | Auth | Qué devuelve |
-|---|---|---|
-| `GET /health` | — | `{status, content_version}` |
-| `GET /raw/<ruta>` | — | El fichero del repo tal cual (`/raw/index.json`, `/raw/messages/…`, `/raw/assets/…`), con `ETag`/`304` |
-| `GET /v1/home?lang=es` | — | Los contenedores de la portada con los textos ya en el idioma pedido (si falta, `es`) |
-| `POST /v1/messages` | `Authorization: Bearer <ID token de Firebase>` | Los mensajes que tocan a esa cuenta, evaluados, ordenados y con las variables puestas |
-| `POST /internal/reload` | `X-Reload-Token` | Vuelve a leer el contenido del disco. Sin `RELOAD_TOKEN` no existe |
-| `GET /preview/` | — | La vista previa (redirige a `/raw/preview/`) |
-
-`POST /v1/messages` recibe:
-
-```json
-{ "lang": "es", "time_zone": "Europe/Madrid", "app": { "version": "3.2.0", "platform": "linux" },
-  "dismissed": ["purchase_success"], "vars": { "app.algo": "valor" } }
-```
-
-Con el token del usuario, el servicio pide a billing (`userInfo`, `getPlans`) y a telemetría (`/api/user-usage/{uid}`). Construye el contexto igual que la app y evalúa con `scripts/core/evaluate.mjs`. Después pone las variables y limpia el HTML con la lista blanca de «HTML admitido». Responde:
-
-```json
-{ "schema_version": 1, "content_version": "…", "forced_block": true,
-  "visible_now": ["trial_expired"], "queue": ["trial_expired", "plan_expired"],
-  "sources": { "billing": "ok", "telemetry": "ok" },
-  "messages": [{ "id": "trial_expired", "size": "md", "position": "center", "backdrop": "blur",
-                 "dismissible": false, "persistent": true, "priority": 100,
-                 "actions": [{ "label": "Activar Confidential", "action": "checkout", "variant": "primary" }],
-                 "html": "<p style=\"color:{{c.textPrimary}}\">…</p>" }] }
-```
-
-Si billing o telemetría fallan, responde igual, sin sus campos en el contexto, y lo indica en `sources`. Los `{{c.<rol>}}` llegan sin resolver, para la app. Los cierres (`dismissed`) los guarda la app.
+| Endpoint | Qué devuelve |
+|---|---|
+| `GET /health` | `{status, content_version}` |
+| `GET /raw/<ruta>` | El fichero del repo tal cual (`/raw/index.json`, `/raw/codes.json`, `/raw/messages/…`, `/raw/assets/…`), con `ETag`/`304` |
+| `GET /v1/home?lang=es` | Los contenedores de la portada con los textos ya en el idioma pedido (si falta, `es`) |
+| `POST /internal/reload` | Con `X-Reload-Token`: vuelve a leer el contenido del disco. Sin `RELOAD_TOKEN` no existe. Si algo no se entiende, sigue sirviendo lo anterior |
+| `GET /preview/` | La vista previa (redirige a `/raw/preview/`) |
 
 En local:
 
@@ -253,20 +231,21 @@ y abrir http://localhost:8787/preview/?m=trial_expired (añade `&theme=dark` par
 
 ## Evaluador de referencia y fixtures
 
-`scripts/evaluate.mjs` implementa la semántica exacta de `when`, `enabled`, `persistent`, cierres y prioridad. La app debe reproducirla. `fixtures/contexts/` tiene un contexto por situación (caducado, cuota agotada, compra reciente, trial a dos días, cuenta sana, sin métricas) con el resultado esperado; sirven como casos de test para la app.
+`scripts/core/evaluate.mjs` implementa la búsqueda en `codes.json`: clave exacta, comodín, `fallback`, variante por plan, prioridad, cierres y bloqueo. La app debe reproducirla. `fixtures/codes/` tiene un caso por situación (trial caducado, trial a dos días, rechazo del Gateway, código desconocido…) con el resultado esperado; sirven como casos de test para la app.
 
 ```
-node scripts/evaluate.mjs fixtures/contexts/expired.json
+node scripts/evaluate.mjs fixtures/codes/trial_expired.json
 node scripts/test-fixtures.mjs
 ```
 
 ## Mensajes actuales
 
-| id | Cuándo | Marco | Tono |
+| id | Con qué código (`codes.json`) | Marco | Tono |
 |---|---|---|---|
-| `trial_expired` | telemetría dice `expired` y el plan era el Trial | AppDialog, blur, persistente, sin X; gana a `plan_expired` | brand |
-| `subscription_expired` | telemetría dice `expired`, plan de pago y `membership.days_left <= 0` (la suscripción caducó por tiempo: `max_days` 30/365 al pagar) | AppDialog, blur, persistente, sin X; mismo diseño que `trial_expired`, gana a `plan_expired` | brand |
-| `plan_expired` | telemetría dice `expired` en un plan de pago sin fecha conocida (`days_left` null o > 0: cuota agotada) | AppDialog, blur, persistente, sin X; respaldo | danger |
-| `quota_exhausted` | uso ≥ 100 % con plan vigente | AppDialog abajo centrado, encima del cuadro de entrada del chat; sin blur, con X, vuelve mientras dure | danger |
-| `purchase_success` | plan de pago con menos de 24 h | AppDialog, blur, con X, una sola vez | success |
-| `trial_ending_soon` | trial con 2 días o menos | AppBanner abajo a la derecha, con X, se cierra a los 10 s | info |
+| `trial_expired` | `PLAN_EXPIRED.DAYS_LIMIT_REACHED` con `plan_code: free_plan` | AppDialog, blur, persistente, sin X | brand |
+| `subscription_expired` | `PLAN_EXPIRED.DAYS_LIMIT_REACHED` con otro plan | AppDialog, blur, persistente, sin X; mismo diseño que `trial_expired` | brand |
+| `plan_expired` | `GATEWAY.INSUFFICIENT_CAPABILITY.max_days`, hasta que telemetría confirma el plan | AppDialog, blur, persistente, sin X | danger |
+| `payment_failed` | `PLAN_REVOKED`: suscripción impagada (Stripe la terminó) sin otro plan ni trial en vigor | AppDialog, blur, persistente, sin X; «Ya lo he pagado» y «Revisar el pago» | danger |
+| `trial_ending_soon` | `PLAN_EXPIRING_SOON` con `plan_code: free_plan` | AppBanner abajo a la derecha, con X, se cierra a los 10 s | info |
+| `quota_exhausted` | Ninguno todavía: llegará con la ventana de tokens | AppDialog abajo centrado, encima del cuadro de entrada del chat; sin blur, con X | danger |
+| `purchase_success` | Ninguno todavía (`PLAN_STARTED`, pendiente) | AppDialog, blur, con X, una sola vez | success |

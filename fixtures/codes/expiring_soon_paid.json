@@ -1,0 +1,5 @@
+{
+  "description": "A un plan de pago le quedan 2 días: esta fase sólo avisa al trial (sin variante para basic_plan)",
+  "codes": [{ "code": "PLAN_EXPIRING_SOON", "params": { "plan_code": "basic_plan", "expires_at": "2026-10-07T10:00:00Z", "days_left": 2 } }],
+  "expected": { "block": false, "visible_now": [], "queue": [] }
+}

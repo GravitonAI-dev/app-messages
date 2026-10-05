@@ -5,7 +5,6 @@
   "required": [
     "schema_version",
     "id",
-    "when",
     "size",
     "position",
     "backdrop",
@@ -25,48 +24,6 @@
     "enabled": {
       "type": "boolean",
       "default": true
-    },
-    "when": {
-      "type": "object",
-      "description": "Condiciones sobre el contexto (usage.*, membership.*, app.*). Todas deben cumplirse. Valor directo = igualdad; objeto = operadores eq, neq, gt, gte, lt, lte, in, exists.",
-      "additionalProperties": {
-        "oneOf": [
-          {
-            "type": [
-              "string",
-              "number",
-              "boolean",
-              "null"
-            ]
-          },
-          {
-            "type": "object",
-            "additionalProperties": false,
-            "properties": {
-              "eq": {},
-              "neq": {},
-              "gt": {
-                "type": "number"
-              },
-              "gte": {
-                "type": "number"
-              },
-              "lt": {
-                "type": "number"
-              },
-              "lte": {
-                "type": "number"
-              },
-              "in": {
-                "type": "array"
-              },
-              "exists": {
-                "type": "boolean"
-              }
-            }
-          }
-        ]
-      }
     },
     "size": {
       "oneOf": [
