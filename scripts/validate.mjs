@@ -3,39 +3,15 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  SIZES, POSITIONS, BACKDROPS, OPERATORS, CONTEXT_FIELDS, PLAN_CODES, ACTIONS, VARIANTS,
+  TONES, CORNER, TAGS, ATTRS, STYLE_PROPS, HOME_CONTAINERS, HOME_ACTIONS, HOME_ICONS,
+  VARIABLE_RE, parseFilters, checkVariable,
+} from './core/contract.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const errors = [];
 const fail = (where, msg) => errors.push(`${where}: ${msg}`);
-
-// ---- Lo que la app entiende --------------------------------------------------
-const SIZES = ['sm', 'md', 'lg'];
-const POSITIONS = ['center', 'top', 'bottom', 'top-right', 'bottom-right'];
-const BACKDROPS = ['blur', 'none'];
-const OPERATORS = ['eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'in', 'exists'];
-const CONTEXT_FIELDS = [
-  'usage.payment_status', 'usage.usage_percentage', 'usage.has_constraints', 'usage.used', 'usage.limit',
-  'membership.payment_status', 'membership.plan_code', 'membership.plan_name', 'membership.created_at',
-  'membership.max_days', 'membership.expires_at', 'membership.days_left', 'membership.hours_since_start',
-  'app.version', 'app.platform',
-];
-const COLOR_ROLES = ['brandPrimary', 'brandHover', 'accentSoft', 'accentLine', 'textOnAccent', 'surface', 'surfaceMuted', 'surfaceRaised',
-  'textPrimary', 'textHeading', 'textSecondary', 'textMuted', 'textTertiary', 'border', 'divider', 'controlBorder', 'controlFill',
-  'success', 'successSurface', 'warning', 'warningSurface', 'danger', 'dangerText', 'dangerSurface', 'infoSurface', 'logoText', 'brandSurface', 'brandLight'];
-const PLAN_CODES = ['basic_plan', 'pro_plan', 'lex_pro_plan'];
-const VARIABLES = ['user_name', 'plan_name', 'plan_end_date', 'days_left', 'usage_percentage', ...PLAN_CODES.map((c) => `plan.${c}.name`), ...COLOR_ROLES.map((r) => 'c.' + r)];
-const TEXT_VARIABLES = VARIABLES.filter((v) => !v.startsWith('c.'));
-const ACTIONS = ['checkout', 'url', 'recheck', 'dismiss', 'signout'];
-const VARIANTS = ['primary', 'secondary', 'ghost', 'danger'];
-const TONES = ['info', 'success', 'warning', 'danger'];
-const CORNER = ['top-right', 'bottom-right'];
-const TAGS = ['div', 'p', 'h1', 'h2', 'h3', 'span', 'strong', 'em', 'a', 'img', 'table', 'tr', 'td', 'ul', 'li', 'br', 'hr'];
-const ATTRS = ['style', 'href', 'src', 'alt', 'width', 'height'];
-const STYLE_PROPS = [
-  'color', 'background', 'background-color', 'font-size', 'font-weight', 'font-family', 'line-height', 'text-align',
-  'text-decoration', 'border', 'border-top', 'border-bottom', 'border-left', 'border-right', 'border-radius',
-  'margin', 'padding', 'width', 'max-width', 'height', 'display', 'opacity', 'letter-spacing', 'text-transform', 'vertical-align',
-];
 
 const readJson = (file) => {
   try { return JSON.parse(readFileSync(resolve(ROOT, file), 'utf8')); }
@@ -95,7 +71,7 @@ function validateMessage(code, file) {
       if (a.action === 'url' && !/^https:\/\//.test(a.url ?? '')) fail(where, `actions[${i}]: la acción url necesita "url" https://`);
       if (a.action !== 'url' && 'url' in a) fail(where, `actions[${i}]: "url" solo va con la acción url`);
       if (('plan' in a || 'interval' in a) && a.action !== 'checkout') fail(where, `actions[${i}]: "plan"/"interval" solo van con la acción checkout`);
-      if ('plan' in a && !['basic_plan', 'pro_plan', 'lex_pro_plan'].includes(a.plan)) fail(where, `actions[${i}]: plan "${a.plan}" desconocido (basic_plan, pro_plan, lex_pro_plan)`);
+      if ('plan' in a && !PLAN_CODES.includes(a.plan)) fail(where, `actions[${i}]: plan "${a.plan}" desconocido (basic_plan, pro_plan, lex_pro_plan)`);
       if ('interval' in a && !['month', 'year'].includes(a.interval)) fail(where, `actions[${i}]: interval "${a.interval}" inválido (month, year)`);
       if ('variant' in a && !VARIANTS.includes(a.variant)) fail(where, `actions[${i}]: variant "${a.variant}" inválido (${VARIANTS.join(', ')})`);
     });
@@ -111,7 +87,7 @@ function validateMessage(code, file) {
   if (m.backdrop === 'blur' && m.dismissible === false && Array.isArray(m.actions) && m.actions.some((a) => a && a.action === 'dismiss')) fail(where, 'un bloqueante sin X no puede llevar un botón dismiss: solo se quita cuando deja de cumplirse su when');
 
   // variables de texto en title y en las etiquetas de botones/enlace
-  const checkTextVars = (txt, what) => { for (const v of String(txt).matchAll(/\{\{\s*([a-zA-Z_.]+)\s*\}\}/g)) if (!TEXT_VARIABLES.includes(v[1])) fail(where, `${what}: variable {{${v[1]}}} desconocida. Admitidas: ${TEXT_VARIABLES.join(', ')}`); };
+  const checkTextVars = (txt, what) => checkVariables(where, what, String(txt), { allowColors: false });
   if (m.title) checkTextVars(m.title, 'title');
   (m.actions ?? []).forEach((a, i) => a && a.label && checkTextVars(a.label, `actions[${i}].label`));
   if (m.footer_link && m.footer_link.label) checkTextVars(m.footer_link.label, 'footer_link.label');
@@ -157,9 +133,15 @@ function validateHtml(where, html) {
     }
   }
 
-  const varRe = /\{\{\s*([a-zA-Z_.]+)\s*\}\}/g;
-  let v;
-  while ((v = varRe.exec(body))) if (!VARIABLES.includes(v[1])) fail(where, `variable {{${v[1]}}} desconocida. Admitidas: ${VARIABLES.join(', ')}`);
+  checkVariables(where, 'HTML', body, { allowColors: true });
+}
+
+// Cada {{…}} del texto tiene que ser una variable conocida con filtros válidos;
+// unas llaves que no encajan con la sintaxis también son un error.
+function checkVariables(where, what, text, options) {
+  for (const v of text.matchAll(VARIABLE_RE)) for (const p of checkVariable(v[1], parseFilters(v[2]), options)) fail(where, `${what}: ${p}`);
+  const rest = text.replace(VARIABLE_RE, '');
+  for (const bad of rest.matchAll(/\{\{[^}]*\}\}/g)) fail(where, `${what}: variable mal escrita ${bad[0]}`);
 }
 
 function validateHref(where, href) {
@@ -185,9 +167,6 @@ function validateHref(where, href) {
 // cambia es su contenido: una lista ordenada de bloques, cada uno con su
 // `type` y su `enabled`. Son datos, no HTML: los pinta la app con sus
 // componentes. Cada texto es un objeto por idioma con "es" obligatorio.
-const HOME_CONTAINERS = ['portada_centro', 'portada_derecha'];
-const HOME_ACTIONS = ['new_chat', 'upload_document', 'transcribe_audio', 'create_client', 'checkout', 'url'];
-const HOME_ICONS = ['add', 'upload', 'audio', 'lock', 'info', 'shield', 'sparkle', 'documents', 'chat', 'check', 'alert', 'book', 'mail', 'openExternal', 'newChat', 'library', 'clients', 'skills', 'templates'];
 const BLOCKS = {
   brand: () => {},
   label: validateTextBlock,

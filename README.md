@@ -2,11 +2,7 @@
 
 Mensajes que la app de escritorio ConfAI muestra a los usuarios (plan caducado, cuota agotada, compra completada, avisos). Viven aquí, fuera del binario: editar un fichero en `main` cambia lo que ven todos los usuarios en la siguiente comprobación de la app, sin release y sin tocar telemetría ni billing.
 
-La app los descarga en crudo desde:
-
-```
-https://raw.githubusercontent.com/GravitonAI-dev/app-messages/main/
-```
+Los sirve el microservicio de `server/` (ver «Microservicio»), desplegado en el VPS. Cada push a `main` publica una imagen nueva con el contenido dentro. La app los pide ya evaluados y con las variables puestas a `POST /v1/messages`. Si no hay conexión, usa los ficheros en crudo de `/raw/` (las mismas rutas que el repo) o su caché, y los evalúa ella misma.
 
 ## Cómo funciona
 
@@ -32,6 +28,8 @@ scripts/validate.mjs       validador (lo ejecuta la CI en cada push)
 preview/index.html         vista previa: simula la app y pinta un mensaje en su contenedor
 scripts/evaluate.mjs       evaluador de referencia: contexto → mensajes visibles (la app debe dar lo mismo)
 fixtures/contexts/*.json   contextos de prueba con el resultado esperado (node scripts/test-fixtures.mjs)
+scripts/core/              el contrato compartido: valores admitidos, gramática de variables y semántica de when
+server/                    el microservicio (NestJS) que sirve y evalúa los mensajes
 ```
 
 ## Crear un mensaje
@@ -173,13 +171,77 @@ En el HTML solo se admiten enlaces `https://` normales dentro del texto.
 
 ## Variables
 
-La app las sustituye antes de pintar, en el HTML y también en `title` y en las etiquetas de `actions` y `footer_link`: `{{user_name}}`, `{{plan_name}}` (plan actual), `{{plan_end_date}}`, `{{days_left}}`, `{{usage_percentage}}`, y el nombre comercial de cada plan tal como lo da billing (`getPlans` → `display_name`): `{{plan.basic_plan.name}}`, `{{plan.pro_plan.name}}`, `{{plan.lex_pro_plan.name}}`. Los nombres de plan nunca se escriben a mano.
+Se sustituyen antes de pintar, en el HTML y también en `title` y en las etiquetas de `actions` y `footer_link`. Lo hace el servicio en `/v1/messages`, o la app cuando trabaja sin conexión. En el HTML los valores van escapados: un nombre de usuario no puede meter etiquetas.
 
-Y los colores: `{{c.<rol>}}` se resuelve con `context.colors` del tema activo (claro u oscuro). Roles y valores en `templates/tones.md`. El validador rechaza colores fijos en `color`, `background` y `border`.
+Sintaxis: `{{ nombre }}`, con filtros opcionales: `{{ nombre | filtro | filtro:arg }}`. Lo que no se conoce sale como «—».
+
+| Variable | Qué es |
+|---|---|
+| `{{user.name}}`, `{{user.email}}` | Nombre (billing y, si no hay, el de la sesión) y correo |
+| `{{membership.*}}`, `{{usage.*}}` | Cualquier campo del contexto de `when` (ver la tabla de abajo), p. ej. `{{membership.days_left}}` |
+| `{{plan.<código>.name}}` | Nombre comercial del plan según billing (`getPlans` → `display_name`): `plan.basic_plan.name`, `plan.pro_plan.name`, `plan.lex_pro_plan.name`. Los nombres de plan nunca se escriben a mano |
+| `{{app.version}}`, `{{app.platform}}`, `{{app.<clave>}}` | Datos de la app. Las claves `app.*` extra las manda la app en `vars`; es lo único que puede inyectar |
+| `{{asset_url}}` | Base pública de `assets/` en el servicio, p. ej. `<img src="{{asset_url}}/logo.png">` |
+
+| Filtro | Ejemplo | Resultado |
+|---|---|---|
+| `date:long` / `date:short` | `{{membership.expires_at \| date:long}}` | `2 de octubre de 2026` / `02/10/2026` (idioma y zona horaria del usuario) |
+| `number[:decimales]` | `{{usage.usage_percentage \| number:1}}` | `87,5` |
+| `percent[:decimales]` | `{{usage.usage_percentage \| percent}}` | `88 %` |
+| `upper`, `lower` | `{{user.name \| upper}}` | `ANA` |
+| `default:"texto"` | `{{user.name \| default:"de nuevo"}}` | el texto si el valor no existe |
+
+Siguen valiendo los nombres de antes: `{{user_name}}`, `{{plan_name}}`, `{{plan_end_date}}` (= `membership.expires_at | date:long`), `{{days_left}}` y `{{usage_percentage}}` (= `usage.usage_percentage | number`).
+
+Y los colores: `{{c.<rol>}}` sólo en el HTML y sin filtros. Los resuelve siempre la app con `context.colors` del tema activo (claro u oscuro). Roles y valores en `templates/tones.md`. El validador rechaza colores fijos en `color`, `background` y `border`.
+
+## Microservicio
+
+`server/` es un NestJS que carga en memoria el contenido del repo (el de la imagen) y lo sirve.
+
+| Endpoint | Auth | Qué devuelve |
+|---|---|---|
+| `GET /health` | — | `{status, content_version}` |
+| `GET /raw/<ruta>` | — | El fichero del repo tal cual (`/raw/index.json`, `/raw/messages/…`, `/raw/assets/…`), con `ETag`/`304` |
+| `GET /v1/home?lang=es` | — | Los contenedores de la portada con los textos ya en el idioma pedido (si falta, `es`) |
+| `POST /v1/messages` | `Authorization: Bearer <ID token de Firebase>` | Los mensajes que tocan a esa cuenta, evaluados, ordenados y con las variables puestas |
+| `POST /internal/reload` | `X-Reload-Token` | Vuelve a leer el contenido del disco. Sin `RELOAD_TOKEN` no existe |
+| `GET /preview/` | — | La vista previa (redirige a `/raw/preview/`) |
+
+`POST /v1/messages` recibe:
+
+```json
+{ "lang": "es", "time_zone": "Europe/Madrid", "app": { "version": "3.2.0", "platform": "linux" },
+  "dismissed": ["purchase_success"], "vars": { "app.algo": "valor" } }
+```
+
+Con el token del usuario, el servicio pide a billing (`userInfo`, `getPlans`) y a telemetría (`/api/user-usage/{uid}`). Construye el contexto igual que la app y evalúa con `scripts/core/evaluate.mjs`. Después pone las variables y limpia el HTML con la lista blanca de «HTML admitido». Responde:
+
+```json
+{ "schema_version": 1, "content_version": "…", "forced_block": true,
+  "visible_now": ["trial_expired"], "queue": ["trial_expired", "plan_expired"],
+  "sources": { "billing": "ok", "telemetry": "ok" },
+  "messages": [{ "id": "trial_expired", "size": "md", "position": "center", "backdrop": "blur",
+                 "dismissible": false, "persistent": true, "priority": 100,
+                 "actions": [{ "label": "Activar Confidential", "action": "checkout", "variant": "primary" }],
+                 "html": "<p style=\"color:{{c.textPrimary}}\">…</p>" }] }
+```
+
+Si billing o telemetría fallan, responde igual, sin sus campos en el contexto, y lo indica en `sources`. Los `{{c.<rol>}}` llegan sin resolver, para la app. Los cierres (`dismissed`) los guarda la app.
+
+En local:
+
+```
+cd server && pnpm install && pnpm test
+pnpm start:dev                                  # http://localhost:3000, contenido de ..
+docker compose up --build                       # igual, en contenedor (necesita server/.env)
+```
+
+Despliegue: `.github/workflows/deploy.yml` valida, publica `ghcr.io/gravitonai-dev/app-messages` y hace `docker compose pull && up -d` en el VPS por SSH. La configuración está en `server/.env.example`.
 
 ## Vista previa
 
-Para ver un mensaje tal y como lo pintará la app (AppDialog o AppBanner, blur, posición, tamaño, tema claro u oscuro) sin compilar nada:
+Para ver un mensaje tal y como lo pintará la app (AppDialog o AppBanner, blur, posición, tamaño, tema claro u oscuro) sin compilar nada (o en `/preview/` del servicio):
 
 ```
 python3 -m http.server 8787

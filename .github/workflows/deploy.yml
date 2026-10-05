@@ -1,0 +1,67 @@
+# Cada push a main (un mensaje nuevo o un cambio en el servicio) publica la
+# imagen en GHCR y la levanta en el VPS. El contenido va dentro de la imagen.
+#
+# Secrets: VPS_HOST, VPS_USER, VPS_SSH_KEY y VPS_APP_DIR (carpeta del VPS con
+# server/docker-compose.yml y su .env). El VPS tiene que poder hacer pull de
+# ghcr.io/gravitonai-dev/app-messages (docker login ghcr.io con un token de lectura).
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    uses: ./.github/workflows/validate.yml
+
+  image:
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: server/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/gravitonai-dev/app-messages:latest
+            ghcr.io/gravitonai-dev/app-messages:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    needs: image
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+            cd "${{ secrets.VPS_APP_DIR }}"
+            IMAGE_TAG=${{ github.sha }} docker compose pull app-messages
+            IMAGE_TAG=${{ github.sha }} docker compose up -d --no-build app-messages
+            for i in $(seq 1 30); do
+              docker compose exec -T app-messages wget -qO- http://127.0.0.1:3000/health && exit 0
+              sleep 2
+            done
+            echo "app-messages no responde en /health" >&2
+            exit 1

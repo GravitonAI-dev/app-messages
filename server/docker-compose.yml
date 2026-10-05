@@ -1,0 +1,15 @@
+# En el VPS: `docker compose pull && docker compose up -d` (la imagen la publica la CI).
+# En local: `docker compose up --build`.
+services:
+  app-messages:
+    image: ghcr.io/gravitonai-dev/app-messages:${IMAGE_TAG:-latest}
+    build:
+      context: ..
+      dockerfile: server/Dockerfile
+    env_file: .env
+    environment:
+      PORT: 3000
+    ports:
+      # Sólo para el proxy inverso del VPS, que pone el TLS y el dominio.
+      - "127.0.0.1:${HOST_PORT:-3000}:3000"
+    restart: unless-stopped

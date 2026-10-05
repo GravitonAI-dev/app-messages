@@ -1,0 +1,7 @@
+.git
+.github
+**/node_modules
+server/dist
+server/dist-test
+server/.env
+fixtures
