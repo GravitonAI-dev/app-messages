@@ -26,7 +26,8 @@
   .card.corner{box-shadow:0 4px 16px rgba(0,0,0,.12);border-radius:6px}
   .card.center{left:50%;top:50%;transform:translate(-50%,-50%)}
   .card.top{left:50%;top:24px;transform:translateX(-50%)}
-  .card.bottom{left:50%;bottom:24px;transform:translateX(-50%)}
+  .card.bottom{left:calc(50% + 120px);bottom:96px;transform:translateX(-50%)}
+  .composer{position:absolute;left:calc(240px + 32px);right:32px;bottom:20px;height:60px;border-radius:10px;background:var(--surface);border:1px solid var(--controlBorder);color:var(--textTertiary);font-size:12.5px;padding:12px;box-sizing:border-box}
   .card.top-right{right:24px;top:24px}
   .card.bottom-right{right:24px;bottom:24px}
   .card.sm{width:360px}.card.md{width:460px}.card.lg{width:620px}
@@ -73,6 +74,7 @@
   <div class="side"><div style="width:70%"></div><div style="width:50%"></div><div style="width:80%"></div><div style="width:60%"></div><div style="width:40%"></div></div>
   <div class="main"><div class="bubble"></div><div class="bubble me"></div><div class="bubble" style="height:100px"></div><div class="bubble me"></div><div class="bubble"></div></div>
 </div>
+<div class="composer">Escribe un mensaje…</div>
 <div id="blur" class="blur" hidden></div>
 <div class="layer"><div id="card" class="card"></div></div>
 <div class="meta" id="meta"></div>
@@ -88,7 +90,7 @@ const THEMES = {
     border:'#2D2D33', divider:'#26262B', controlBorder:'#3A3A42', controlFill:'#232329', success:'#3FBE7E', successSurface:'#13301F', warning:'#F59E0B', warningSurface:'#3A2A0C',
     danger:'#F06A8B', dangerText:'#F06A8B', dangerSurface:'#351A22', infoSurface:'rgba(125,103,192,0.08)', logoText:'#D7D7DB', brandSurface:'#0D0D14', brandLight:'#9B8FD4', overlay:'rgba(0,0,0,0.6)', sidebarBg:'#121212', sidebarLine:'#2A2A2A' },
 };
-const VARS = { user_name: 'Laura', plan_name: 'Trial', plan_end_date: '2 de octubre de 2026', days_left: '2', usage_percentage: '104', 'plan.basic_plan.name': 'Confidential', 'plan.pro_plan.name': 'Extended', 'plan.lex_pro_plan.name': 'Abogados' };
+const VARS = { user_name: 'Laura', plan_name: 'Trial', plan_end_date: '2 de octubre de 2026', days_left: '2', usage_percentage: '100', usage_reset: 'mañana a las 00:00', usage_since: 'desde el 13 de septiembre', 'plan.basic_plan.name': 'Confidential', 'plan.pro_plan.name': 'Extended', 'plan.lex_pro_plan.name': 'Abogados' };
 const subst = (t) => String(t).replace(/\{\{\s*([a-zA-Z_.]+)\s*\}\}/g, (_, k) => VARS[k] ?? '');
 const q = new URLSearchParams(location.search);
 let theme = q.get('theme') === 'dark' ? 'dark' : 'light';

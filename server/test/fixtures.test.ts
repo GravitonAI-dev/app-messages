@@ -40,5 +40,10 @@ for (const fx of fixtures()) {
     });
     assert.deepEqual({ forced_block: out.forced_block, visible_now: out.visible_now, queue: out.queue }, fx.expected);
     assert.deepEqual(out.messages.map((m) => m.id), fx.expected.queue);
+
+    // Ninguna variable de datos se queda sin sustituir (solo los colores, para la app).
+    for (const m of out.messages) assert.doesNotMatch(m.html, /\{\{\s*(?!c\.)[^}]*\}\}/, m.id);
+    const quota = out.messages.find((m) => m.id === 'quota_exhausted');
+    if (quota) assert.match(quota.html, /Se renueva al empezar tu próximo periodo\./);
   });
 }

@@ -15,7 +15,7 @@ export const COLOR_ROLES = ['brandPrimary', 'brandHover', 'accentSoft', 'accentL
   'textPrimary', 'textHeading', 'textSecondary', 'textMuted', 'textTertiary', 'border', 'divider', 'controlBorder', 'controlFill',
   'success', 'successSurface', 'warning', 'warningSurface', 'danger', 'dangerText', 'dangerSurface', 'infoSurface', 'logoText', 'brandSurface', 'brandLight'];
 export const PLAN_CODES = ['basic_plan', 'pro_plan', 'lex_pro_plan'];
-export const VARIABLES = ['user_name', 'plan_name', 'plan_end_date', 'days_left', 'usage_percentage', ...PLAN_CODES.map((c) => `plan.${c}.name`), ...COLOR_ROLES.map((r) => 'c.' + r)];
+export const VARIABLES = ['user_name', 'plan_name', 'plan_end_date', 'days_left', 'usage_percentage', 'usage_reset', 'usage_since', ...PLAN_CODES.map((c) => `plan.${c}.name`), ...COLOR_ROLES.map((r) => 'c.' + r)];
 export const TEXT_VARIABLES = VARIABLES.filter((v) => !v.startsWith('c.'));
 export const ACTIONS = ['checkout', 'url', 'recheck', 'dismiss', 'signout'];
 export const VARIANTS = ['primary', 'secondary', 'ghost', 'danger'];
@@ -48,8 +48,15 @@ export const VARIABLE_ALIASES = {
   usage_percentage: 'usage.usage_percentage | number',
 };
 
+/**
+ * Frases que calcula quien pinta, no campos del contexto: cuándo se renueva la
+ * cuota («mañana a las 00:00») y desde cuándo cuenta el consumo («desde el 13
+ * de septiembre»). Sin dato de telemetría, un texto genérico.
+ */
+export const COMPUTED_VARIABLES = ['usage_reset', 'usage_since'];
+
 export const DATA_VARIABLES = [
-  ...CONTEXT_FIELDS, 'user.name', 'user.email', 'asset_url', ...PLAN_CODES.map((c) => `plan.${c}.name`),
+  ...CONTEXT_FIELDS, 'user.name', 'user.email', 'asset_url', ...PLAN_CODES.map((c) => `plan.${c}.name`), ...COMPUTED_VARIABLES,
 ];
 
 /** `app.<clave>`: los datos que manda la app en `vars`. */

@@ -179,6 +179,8 @@ Sintaxis: `{{ nombre }}`, con filtros opcionales: `{{ nombre | filtro | filtro:a
 |---|---|
 | `{{user.name}}`, `{{user.email}}` | Nombre (billing y, si no hay, el de la sesión) y correo |
 | `{{membership.*}}`, `{{usage.*}}` | Cualquier campo del contexto de `when` (ver la tabla de abajo), p. ej. `{{membership.days_left}}` |
+| `{{usage_reset}}` | Cuándo se renueva la cuota: «mañana a las 00:00». Sin dato de telemetría, «al empezar tu próximo periodo» |
+| `{{usage_since}}` | Desde cuándo cuenta el consumo: «desde el 13 de septiembre». Sin dato, «en este periodo» |
 | `{{plan.<código>.name}}` | Nombre comercial del plan según billing (`getPlans` → `display_name`): `plan.basic_plan.name`, `plan.pro_plan.name`, `plan.lex_pro_plan.name`. Los nombres de plan nunca se escriben a mano |
 | `{{app.version}}`, `{{app.platform}}`, `{{app.<clave>}}` | Datos de la app. Las claves `app.*` extra las manda la app en `vars`; es lo único que puede inyectar |
 | `{{asset_url}}` | Base pública de `assets/` en el servicio, p. ej. `<img src="{{asset_url}}/logo.png">` |
@@ -265,6 +267,6 @@ node scripts/test-fixtures.mjs
 | `trial_expired` | telemetría dice `expired` y el plan era el Trial | AppDialog, blur, persistente, sin X; gana a `plan_expired` | brand |
 | `subscription_expired` | telemetría dice `expired`, plan de pago y `membership.days_left <= 0` (la suscripción caducó por tiempo: `max_days` 30/365 al pagar) | AppDialog, blur, persistente, sin X; mismo diseño que `trial_expired`, gana a `plan_expired` | brand |
 | `plan_expired` | telemetría dice `expired` en un plan de pago sin fecha conocida (`days_left` null o > 0: cuota agotada) | AppDialog, blur, persistente, sin X; respaldo | danger |
-| `quota_exhausted` | uso ≥ 100 % con plan vigente | AppDialog, sin blur, con X, vuelve mientras dure | warning |
+| `quota_exhausted` | uso ≥ 100 % con plan vigente | AppDialog abajo centrado, encima del cuadro de entrada del chat; sin blur, con X, vuelve mientras dure | danger |
 | `purchase_success` | plan de pago con menos de 24 h | AppDialog, blur, con X, una sola vez | success |
 | `trial_ending_soon` | trial con 2 días o menos | AppBanner abajo a la derecha, con X, se cierra a los 10 s | info |

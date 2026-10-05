@@ -18,6 +18,16 @@ const SEED_PLAN_NAMES: Record<string, string> = {
   lex_pro_plan: 'Abogados',
 };
 
+/**
+ * {{usage_reset}} / {{usage_since}}: telemetría (`/api/user-usage`) aún no da
+ * ni la renovación ni el inicio del periodo, así que van con el texto
+ * genérico del contrato. Cuando los dé, se calculan aquí.
+ */
+const USAGE_PERIOD_TEXTS: Record<string, { usage_reset: string; usage_since: string }> = {
+  es: { usage_reset: 'al empezar tu próximo periodo', usage_since: 'en este periodo' },
+  en: { usage_reset: 'at the start of your next period', usage_since: 'this period' },
+};
+
 /** Los HTML antiguos apuntan al repo en crudo; servidos desde aquí, a /raw del servicio. */
 const GITHUB_RAW = 'https://raw.githubusercontent.com/GravitonAI-dev/app-messages/main/';
 
@@ -90,6 +100,7 @@ export class GetMessagesUseCase {
       'user.name': name,
       'user.email': info?.user_info?.email || input.user.email,
       asset_url: `${config.PUBLIC_BASE_URL}/raw/assets`,
+      ...(USAGE_PERIOD_TEXTS[input.lang] ?? USAGE_PERIOD_TEXTS.es),
       ...Object.fromEntries(Object.entries(planNames).map(([code, n]) => [`plan.${code}.name`, n])),
     };
   }

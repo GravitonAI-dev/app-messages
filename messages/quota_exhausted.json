@@ -10,9 +10,9 @@
       "gte": 100
     }
   },
-  "title": "Cuota de mensajes agotada",
+  "title": "Has agotado tu cuota de IA",
   "size": "md",
-  "position": "center",
+  "position": "bottom",
   "backdrop": "none",
   "dismissible": true,
   "persistent": true,
@@ -21,7 +21,12 @@
   "html_file": "quota_exhausted.html",
   "actions": [
     {
-      "label": "Ampliar plan",
+      "label": "Esperar a la renovación",
+      "action": "dismiss",
+      "variant": "secondary"
+    },
+    {
+      "label": "Aumentar cuota de IA",
       "action": "checkout",
       "variant": "primary"
     }

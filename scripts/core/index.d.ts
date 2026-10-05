@@ -64,6 +64,7 @@ export const HOME_ICONS: string[];
 
 export interface Filter { name: string; arg?: string }
 export const VARIABLE_ALIASES: Record<string, string>;
+export const COMPUTED_VARIABLES: string[];
 export const DATA_VARIABLES: string[];
 export const APP_VARIABLE_RE: RegExp;
 export const FILTERS: Record<string, string[] | null>;
