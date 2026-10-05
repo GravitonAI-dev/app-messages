@@ -68,6 +68,7 @@
   <strong>Vista previa</strong>
   <select id="pick"></select>
   <button id="theme" title="Cambiar tema">Tema: claro</button>
+  <button id="lang" title="Cambiar idioma">Idioma: es</button>
   <span id="props"></span>
 </div>
 <div class="app">
@@ -90,8 +91,16 @@ const THEMES = {
     border:'#2D2D33', divider:'#26262B', controlBorder:'#3A3A42', controlFill:'#232329', success:'#3FBE7E', successSurface:'#13301F', warning:'#F59E0B', warningSurface:'#3A2A0C',
     danger:'#F06A8B', dangerText:'#F06A8B', dangerSurface:'#351A22', infoSurface:'rgba(125,103,192,0.08)', logoText:'#D7D7DB', brandSurface:'#0D0D14', brandLight:'#9B8FD4', overlay:'rgba(0,0,0,0.6)', sidebarBg:'#121212', sidebarLine:'#2A2A2A' },
 };
-const VARS = { user_name: 'Laura', plan_name: 'Trial', plan_end_date: '2 de octubre de 2026', days_left: '2', usage_percentage: '100', usage_reset: 'mañana a las 00:00', usage_since: 'desde el 13 de septiembre', 'plan.basic_plan.name': 'Confidential', 'plan.pro_plan.name': 'Extended', 'plan.lex_pro_plan.name': 'Abogados' };
-const subst = (t) => String(t).replace(/\{\{\s*([a-zA-Z_.]+)\s*\}\}/g, (_, k) => VARS[k] ?? '');
+// Variables de ejemplo por idioma (la app las rellena con los datos reales).
+const VARS_BY_LANG = {
+  es: { user_name: 'Laura', plan_name: 'Trial', plan_end_date: '2 de octubre de 2026', days_left: '2', usage_percentage: '100', usage_reset: 'mañana a las 00:00', usage_since: 'desde el 13 de septiembre', 'plan.basic_plan.name': 'Confidential', 'plan.pro_plan.name': 'Extended', 'plan.lex_pro_plan.name': 'Abogados' },
+  en: { ...{ user_name: 'Laura', plan_name: 'Trial', plan_end_date: '2 de octubre de 2026', days_left: '2', usage_percentage: '100', usage_reset: 'mañana a las 00:00', usage_since: 'desde el 13 de septiembre', 'plan.basic_plan.name': 'Confidential', 'plan.pro_plan.name': 'Extended', 'plan.lex_pro_plan.name': 'Abogados' }, plan_end_date: 'October 2, 2026', usage_reset: 'tomorrow at 00:00', usage_since: 'since September 13' },
+};
+let lang = new URLSearchParams(location.search).get('lang') === 'en' ? 'en' : 'es';
+let VARS = VARS_BY_LANG[lang];
+// Un texto del mensaje: una cadena o uno por idioma (si falta el idioma, "es").
+const pick = (v) => (v && typeof v === 'object' ? (v[lang] ?? v.es) : v);
+const subst = (t) => String(pick(t)).replace(/\{\{\s*([a-zA-Z_.]+)\s*\}\}/g, (_, k) => VARS[k] ?? '');
 const q = new URLSearchParams(location.search);
 let theme = q.get('theme') === 'dark' ? 'dark' : 'light';
 let current = null;
@@ -113,7 +122,7 @@ async function load(id) {
   }
   // El plan actual según el mensaje: Trial si sale para free_plan, Confidential si no
   VARS.plan_name = via.some((v) => v.includes('(free_plan)')) ? 'Trial' : 'Confidential';
-  let html = m.html ?? await (await fetch('../messages/' + m.html_file)).text();
+  let html = pick(m.html) ?? await (await fetch('../messages/' + pick(m.html_file))).text();
   const t = THEMES[theme];
   html = html.replace(/\{\{\s*([a-zA-Z_.]+)\s*\}\}/g, (_, k) => k.startsWith('c.') ? (t[k.slice(2)] ?? 'magenta') : (VARS[k] ?? ''))
              .replaceAll('https://raw.githubusercontent.com/GravitonAI-dev/app-messages/main/', '../');
@@ -138,7 +147,7 @@ async function load(id) {
   document.getElementById('props').textContent = `${corner ? 'AppBanner' : 'AppDialog'} · ${m.size} · ${m.position} · ${m.backdrop} · ${m.dismissible ? 'con X' : 'sin X'} · ${m.persistent ? 'persistente' : 'una vez'}${m.auto_close ? ' · se cierra a los ' + m.auto_close + ' s' : ''} · prioridad ${m.priority}`;
   document.getElementById('meta').textContent = 'códigos: ' + (via.length ? via.join(', ') : 'ninguno');
   card.querySelectorAll('a[href^="confai://"]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); document.getElementById('meta').textContent = 'acción: ' + a.getAttribute('href'); }));
-  history.replaceState(null, '', `?m=${id}&theme=${theme}`);
+  history.replaceState(null, '', `?m=${id}&theme=${theme}&lang=${lang}`);
 }
 (async () => {
   applyTheme();
@@ -148,6 +157,9 @@ async function load(id) {
   pick.value = q.get('m') && idx.messages[q.get('m')] ? q.get('m') : Object.keys(idx.messages)[0];
   pick.addEventListener('change', () => load(pick.value));
   document.getElementById('theme').addEventListener('click', () => { theme = theme === 'dark' ? 'light' : 'dark'; applyTheme(); load(current); });
+  const langButton = document.getElementById('lang');
+  langButton.textContent = 'Idioma: ' + lang;
+  langButton.addEventListener('click', () => { lang = lang === 'en' ? 'es' : 'en'; VARS = VARS_BY_LANG[lang]; langButton.textContent = 'Idioma: ' + lang; load(current); });
   load(pick.value);
 })();
 </script>

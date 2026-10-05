@@ -2,7 +2,10 @@
   "schema_version": 1,
   "id": "payment_failed",
   "enabled": true,
-  "title": "No hemos podido cobrar tu suscripción",
+  "title": {
+    "es": "No hemos podido cobrar tu suscripción",
+    "en": "We couldn't charge your subscription"
+  },
   "size": "md",
   "position": "center",
   "backdrop": "blur",
@@ -10,21 +13,33 @@
   "persistent": true,
   "auto_close": 0,
   "priority": 105,
-  "html_file": "payment_failed.html",
+  "html_file": {
+    "es": "payment_failed.html",
+    "en": "payment_failed.en.html"
+  },
   "actions": [
     {
-      "label": "Ya lo he pagado",
+      "label": {
+        "es": "Ya lo he pagado",
+        "en": "I've paid"
+      },
       "action": "recheck",
       "variant": "secondary"
     },
     {
-      "label": "Revisar el pago",
+      "label": {
+        "es": "Revisar el pago",
+        "en": "Review payment"
+      },
       "action": "checkout",
       "variant": "primary"
     }
   ],
   "footer_link": {
-    "label": "Entrar con otra cuenta",
+    "label": {
+      "es": "Entrar con otra cuenta",
+      "en": "Sign in with another account"
+    },
     "action": "signout"
   }
 }

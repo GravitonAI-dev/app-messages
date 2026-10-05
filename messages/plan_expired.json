@@ -2,7 +2,10 @@
   "schema_version": 1,
   "id": "plan_expired",
   "enabled": true,
-  "title": "Tu plan ha caducado",
+  "title": {
+    "es": "Tu plan ha caducado",
+    "en": "Your plan has expired"
+  },
   "size": "md",
   "position": "center",
   "backdrop": "blur",
@@ -10,21 +13,33 @@
   "persistent": true,
   "auto_close": 0,
   "priority": 100,
-  "html_file": "plan_expired.html",
+  "html_file": {
+    "es": "plan_expired.html",
+    "en": "plan_expired.en.html"
+  },
   "actions": [
     {
-      "label": "Ya lo he renovado",
+      "label": {
+        "es": "Ya lo he renovado",
+        "en": "I've renewed it"
+      },
       "action": "recheck",
       "variant": "secondary"
     },
     {
-      "label": "Renovar mi plan",
+      "label": {
+        "es": "Renovar mi plan",
+        "en": "Renew my plan"
+      },
       "action": "checkout",
       "variant": "primary"
     }
   ],
   "footer_link": {
-    "label": "Entrar con otra cuenta",
+    "label": {
+      "es": "Entrar con otra cuenta",
+      "en": "Sign in with another account"
+    },
     "action": "signout"
   }
 }

@@ -2,7 +2,10 @@
   "schema_version": 1,
   "id": "purchase_success",
   "enabled": true,
-  "title": "Compra completada",
+  "title": {
+    "es": "Compra completada",
+    "en": "Purchase completed"
+  },
   "size": "md",
   "position": "center",
   "backdrop": "blur",
@@ -10,12 +13,18 @@
   "persistent": false,
   "auto_close": 0,
   "priority": 60,
-  "html_file": "purchase_success.html",
+  "html_file": {
+    "es": "purchase_success.html",
+    "en": "purchase_success.en.html"
+  },
   "actions": [
     {
-      "label": "Ir al Panel de Usuario",
+      "label": {
+        "es": "Ir al Panel de Usuario",
+        "en": "Go to dashboard"
+      },
       "action": "url",
-      "url": "https://confidentialai.es/dashboard",
+      "url": "https://confai.app/dashboard",
       "variant": "primary"
     }
   ]

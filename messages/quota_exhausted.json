@@ -2,7 +2,10 @@
   "schema_version": 1,
   "id": "quota_exhausted",
   "enabled": true,
-  "title": "Has agotado tu cuota de IA",
+  "title": {
+    "es": "Has agotado tu cuota de IA",
+    "en": "You've used up your AI quota"
+  },
   "size": "md",
   "position": "bottom",
   "backdrop": "none",
@@ -10,15 +13,24 @@
   "persistent": true,
   "auto_close": 0,
   "priority": 50,
-  "html_file": "quota_exhausted.html",
+  "html_file": {
+    "es": "quota_exhausted.html",
+    "en": "quota_exhausted.en.html"
+  },
   "actions": [
     {
-      "label": "Esperar a la renovación",
+      "label": {
+        "es": "Esperar a la renovación",
+        "en": "Wait for renewal"
+      },
       "action": "dismiss",
       "variant": "secondary"
     },
     {
-      "label": "Aumentar cuota de IA",
+      "label": {
+        "es": "Aumentar cuota de IA",
+        "en": "Increase AI quota"
+      },
       "action": "checkout",
       "variant": "primary"
     }

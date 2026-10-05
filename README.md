@@ -109,6 +109,17 @@ Un mensaje se ve exactamente igual que en `preview/` en cualquier ventana o moni
 | `footer_link`: `{label, action}` → AppLink a la izquierda del pie | colores solo como `{{c.<rol>}}` |
 | `tone` (`info`, `success`, `warning`, `danger`): solo en mensajes de esquina (AppBanner) | |
 
+## Idiomas
+
+Cada mensaje puede ir en varios idiomas, con la misma convención que la portada:
+
+- `title` y las etiquetas (`label`) de `actions` y `footer_link`: un texto o uno por idioma, `{ "es": "Tu plan ha caducado", "en": "Your plan has expired" }`.
+- `html_file`: un fichero o uno por idioma, `{ "es": "plan_expired.html", "en": "plan_expired.en.html" }`. Cada idioma es su propio HTML: mismo diseño, textos traducidos.
+
+`es` es obligatorio. La app usa el de su idioma y, si falta, `es`. Las variables también salen en el idioma de la app (`{{plan_end_date}}`: «9 de octubre de 2026» / «October 9, 2026»). El validador comprueba cada idioma: que exista su fichero, su HTML y sus variables.
+
+En la vista previa, el botón «Idioma» (o `&lang=en`) cambia de idioma.
+
 ## Campos del contenedor
 
 | Campo | Valores | Qué hace |
@@ -121,7 +132,7 @@ Un mensaje se ve exactamente igual que en `preview/` en cualquier ventana o moni
 | `auto_close` | segundos, `0` = no | Se cierra solo (solo con `dismissible: true`). Cuenta como cierre: con `persistent: false` no vuelve a salir |
 | `priority` | 0-1000 | Sin uso: el orden lo pone la `priority` de la entrada de `codes.json` |
 | `enabled` | `true`, `false` | Apagar un mensaje sin borrarlo |
-| `title` | texto | Título en la cabecera del AppDialog. Opcional: sin él, el diálogo no tiene cabecera y el cuerpo lleva su propio encabezado |
+| `title` | texto, o uno por idioma | Título en la cabecera del AppDialog. Opcional: sin él, el diálogo no tiene cabecera y el cuerpo lleva su propio encabezado |
 | `tone` | `info`, `success`, `warning`, `danger` | Color e icono del AppBanner. Obligatorio en mensajes de esquina |
 | `actions` | lista de 1 a 3 `{label, action, url?, variant}` | Botones del pie, de izquierda a derecha. El primario a la derecha |
 | `footer_link` | `{label, action}` | Enlace a la izquierda del pie |
@@ -171,7 +182,7 @@ Van en `actions` y `footer_link` del JSON, nunca como enlaces en el HTML:
 | action | Qué hace |
 |---|---|
 | `checkout` | Abre la web en Suscripción (`/dashboard/subscription`, planes de pago) con la sesión del usuario. `plan` e `interval` opcionales llevan al checkout del plan, pero HOY el handoff de billing solo admite rutas `/dashboard/...` sin query: hasta que billing (`web-handoff.ts`) y la web (`lib/safeNext.js`) acepten `/checkout?plan=…`, no los uses |
-| `url` (+ `url`) | Abre la URL https en el navegador. Si es de `confidentialai.es/dashboard/...` (sin query) se abre con la sesión del usuario (handoff); cualquier otra, sin sesión |
+| `url` (+ `url`) | Abre la URL https en el navegador. Si es de `confai.app/dashboard/...` (sin query) se abre con la sesión del usuario (handoff); cualquier otra, sin sesión |
 | `recheck` | Vuelve a comprobar el estado de la cuenta ahora |
 | `dismiss` | Cierra el mensaje |
 | `signout` | Cierra la sesión |
@@ -227,7 +238,7 @@ Para ver un mensaje tal y como lo pintará la app (AppDialog o AppBanner, blur, 
 python3 -m http.server 8787
 ```
 
-y abrir http://localhost:8787/preview/?m=trial_expired (añade `&theme=dark` para el tema oscuro). El desplegable cambia de mensaje; los botones `confai://` muestran la acción abajo a la izquierda en lugar de ejecutarla.
+y abrir http://localhost:8787/preview/?m=trial_expired (añade `&theme=dark` para el tema oscuro y `&lang=en` para el inglés). El desplegable cambia de mensaje; los botones `confai://` muestran la acción abajo a la izquierda en lugar de ejecutarla.
 
 ## Evaluador de referencia y fixtures
 

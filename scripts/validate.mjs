@@ -88,14 +88,14 @@ function validateMessage(code, file) {
   if (m.auto_close > 0 && m.dismissible === false) fail(where, 'auto_close solo tiene sentido con dismissible: true');
 
   const corner = CORNER.includes(m.position);
-  if ('title' in m && (typeof m.title !== 'string' || !m.title.trim())) fail(where, 'title debe ser un texto no vacío (o no ponerlo: AppDialog sin cabecera)');
+  if ('title' in m && !localized(m.title)) fail(where, 'title debe ser un texto no vacío o uno por idioma {"es": …, "en": …} con "es" (o no ponerlo: AppDialog sin cabecera)');
   if (corner && m.backdrop === 'blur') fail(where, 'un mensaje de esquina (AppBanner) no lleva blur');
   if (corner && !TONES.includes(m.tone)) fail(where, `los mensajes de esquina son un AppBanner y necesitan "tone" (${TONES.join(', ')})`);
   if ('tone' in m && !TONES.includes(m.tone)) fail(where, `tone "${m.tone}" inválido`);
   if ('actions' in m) {
     if (!Array.isArray(m.actions) || m.actions.length > 3) fail(where, 'actions debe ser una lista de 1 a 3 botones');
     else m.actions.forEach((a, i) => {
-      if (!a || typeof a.label !== 'string' || !a.label.trim()) fail(where, `actions[${i}]: falta label`);
+      if (!a || !localized(a.label)) fail(where, `actions[${i}]: falta label (un texto o uno por idioma con "es")`);
       if (!ACTIONS.includes(a.action)) fail(where, `actions[${i}]: acción "${a.action}" desconocida. Admitidas: ${ACTIONS.join(', ')}`);
       if (a.action === 'url' && !/^https:\/\//.test(a.url ?? '')) fail(where, `actions[${i}]: la acción url necesita "url" https://`);
       if (a.action !== 'url' && 'url' in a) fail(where, `actions[${i}]: "url" solo va con la acción url`);
@@ -108,7 +108,7 @@ function validateMessage(code, file) {
   }
   if ('footer_link' in m) {
     const l = m.footer_link;
-    if (!l || typeof l.label !== 'string' || !ACTIONS.includes(l.action)) fail(where, 'footer_link necesita label y una acción válida');
+    if (!l || !localized(l.label) || !ACTIONS.includes(l.action)) fail(where, 'footer_link necesita label (un texto o uno por idioma con "es") y una acción válida');
     else if (l.action === 'url' && !/^https:\/\//.test(l.url ?? '')) fail(where, 'footer_link con acción url necesita "url" https://');
     if (corner) fail(where, 'footer_link solo existe en los AppDialog (mensajes centrados)');
   }
@@ -116,20 +116,37 @@ function validateMessage(code, file) {
   if (m.backdrop === 'blur' && m.dismissible === false && Array.isArray(m.actions) && m.actions.some((a) => a && a.action === 'dismiss')) fail(where, 'un bloqueante sin X no puede llevar un botón dismiss: solo se quita cuando deja de cumplirse su when');
 
   // variables de texto en title y en las etiquetas de botones/enlace
-  const checkTextVars = (txt, what) => checkVariables(where, what, String(txt), { allowColors: false });
+  const checkTextVars = (txt, what) => {
+    for (const [lang, t] of byLang(txt)) checkVariables(where, `${what}${lang === '' ? '' : '.' + lang}`, String(t), { allowColors: false });
+  };
   if (m.title) checkTextVars(m.title, 'title');
   (m.actions ?? []).forEach((a, i) => a && a.label && checkTextVars(a.label, `actions[${i}].label`));
   if (m.footer_link && m.footer_link.label) checkTextVars(m.footer_link.label, 'footer_link.label');
 
-  let html = null;
-  if (m.html_file) {
-    const htmlPath = resolve(ROOT, 'messages', m.html_file);
-    if (!existsSync(htmlPath)) fail(where, `html_file "${m.html_file}" no existe en messages/`);
-    else html = readFileSync(htmlPath, 'utf8');
-  } else if (typeof m.html === 'string') html = m.html;
-  else fail(where, 'falta html_file (o html en línea)');
+  // El cuerpo: un fichero (o HTML en línea), o uno por idioma con "es".
+  if (m.html_file !== undefined) {
+    if (!localized(m.html_file)) { fail(where, 'html_file debe ser un fichero o uno por idioma {"es": …, "en": …} con "es"'); return; }
+    for (const [lang, file] of byLang(m.html_file)) {
+      const htmlPath = resolve(ROOT, 'messages', file);
+      if (!existsSync(htmlPath)) fail(where, `html_file${lang ? '.' + lang : ''} "${file}" no existe en messages/`);
+      else validateHtml(`messages/${file}`, readFileSync(htmlPath, 'utf8'));
+    }
+  } else if (localized(m.html)) {
+    for (const [lang, html] of byLang(m.html)) validateHtml(`messages/${m.id}.json#html${lang ? '.' + lang : ''}`, html);
+  } else fail(where, 'falta html_file (o html en línea)');
+}
 
-  if (html !== null) validateHtml(`messages/${m.html_file ?? m.id + '.json#html'}`, html);
+// Un texto de un mensaje: una cadena, o un objeto por idioma con "es" (como la
+// portada). Si falta el idioma de la app, se usa "es".
+function localized(value) {
+  if (typeof value === 'string') return value.trim() !== '';
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  return typeof value.es === 'string' && Object.entries(value).every(([k, v]) => /^[a-z]{2}$/.test(k) && typeof v === 'string' && v.trim() !== '');
+}
+
+/** [[idioma, texto]]; '' como idioma para una cadena sin idiomas. */
+function byLang(value) {
+  return typeof value === 'string' ? [['', value]] : Object.entries(value ?? {});
 }
 
 function validateHtml(where, html) {

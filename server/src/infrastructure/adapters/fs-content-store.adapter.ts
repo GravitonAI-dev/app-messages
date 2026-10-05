@@ -73,8 +73,10 @@ export class FsContentStore extends ContentPort {
     const index = json<{ codes?: string; messages?: Record<string, string>; home?: Record<string, string> }>('index.json');
     json(index.codes ?? 'codes.json');
     const messages = Object.values(index.messages ?? {}).map((path) => {
-      const m = json<{ html_file?: string }>(path);
-      if (m.html_file) text(`messages/${m.html_file}`);
+      // html_file: un fichero o uno por idioma ({ "es": "x.html", "en": "x.en.html" }).
+      const m = json<{ html_file?: string | Record<string, string> }>(path);
+      const files = typeof m.html_file === 'string' ? [m.html_file] : Object.values(m.html_file ?? {});
+      for (const f of files) text(`messages/${f}`);
       return m;
     });
     const home = Object.fromEntries(Object.entries(index.home ?? {}).map(([key, path]) => [key, json<HomeContainer>(path)]));

@@ -73,15 +73,49 @@
       "maximum": 1000
     },
     "html_file": {
-      "type": "string",
-      "pattern": "^[a-z0-9_]+\\.html$"
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "object",
+          "required": [
+            "es"
+          ],
+          "propertyNames": {
+            "pattern": "^[a-z]{2}$"
+          },
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      ],
+      "description": "Fichero del cuerpo en messages/, o uno por idioma {\"es\": \"x.html\", \"en\": \"x.en.html\"}."
     },
     "html": {
       "type": "string"
     },
     "title": {
-      "type": "string",
-      "description": "Título del AppDialog (obligatorio en mensajes centrados)"
+      "description": "Un texto, o uno por idioma {\"es\": …, \"en\": …} con \"es\" obligatorio. Si falta el idioma de la app, se usa \"es\".",
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "object",
+          "required": [
+            "es"
+          ],
+          "propertyNames": {
+            "pattern": "^[a-z]{2}$"
+          },
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      ]
     },
     "tone": {
       "enum": [
@@ -105,7 +139,26 @@
         "additionalProperties": false,
         "properties": {
           "label": {
-            "type": "string"
+            "oneOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "object",
+                "required": [
+                  "es"
+                ],
+                "propertyNames": {
+                  "pattern": "^[a-z]{2}$"
+                },
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            ],
+            "description": "Un texto, o uno por idioma {\"es\": …, \"en\": …} con \"es\" obligatorio. Si falta el idioma de la app, se usa \"es\"."
           },
           "action": {
             "enum": [
@@ -157,7 +210,26 @@
       "additionalProperties": false,
       "properties": {
         "label": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "object",
+              "required": [
+                "es"
+              ],
+              "propertyNames": {
+                "pattern": "^[a-z]{2}$"
+              },
+              "additionalProperties": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          ],
+          "description": "Un texto, o uno por idioma {\"es\": …, \"en\": …} con \"es\" obligatorio. Si falta el idioma de la app, se usa \"es\"."
         },
         "action": {
           "enum": [

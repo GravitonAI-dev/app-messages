@@ -10,10 +10,16 @@
   "persistent": false,
   "auto_close": 10,
   "priority": 20,
-  "html_file": "trial_ending_soon.html",
+  "html_file": {
+    "es": "trial_ending_soon.html",
+    "en": "trial_ending_soon.en.html"
+  },
   "actions": [
     {
-      "label": "Ver planes",
+      "label": {
+        "es": "Ver planes",
+        "en": "See plans"
+      },
       "action": "checkout",
       "variant": "primary"
     }

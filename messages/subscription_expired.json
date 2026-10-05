@@ -9,17 +9,26 @@
   "persistent": true,
   "auto_close": 0,
   "priority": 105,
-  "html_file": "subscription_expired.html",
+  "html_file": {
+    "es": "subscription_expired.html",
+    "en": "subscription_expired.en.html"
+  },
   "actions": [
     {
-      "label": "Renovar {{plan_name}}",
+      "label": {
+        "es": "Renovar {{plan_name}}",
+        "en": "Renew {{plan_name}}"
+      },
       "action": "checkout",
       "variant": "primary"
     }
   ],
   "footer_link": {
-    "label": "Acceder al perfil de usuario",
+    "label": {
+      "es": "Acceder al perfil de usuario",
+      "en": "Open your user profile"
+    },
     "action": "url",
-    "url": "https://confidentialai.es/dashboard/subscription"
+    "url": "https://confai.app/dashboard/subscription"
   }
 }
