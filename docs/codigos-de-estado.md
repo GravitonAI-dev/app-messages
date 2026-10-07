@@ -86,6 +86,7 @@ El Gateway no cambia: el código del catálogo se forma con lo que ya responde, 
 | `GATEWAY.INSUFFICIENT_CAPABILITY` | 403, el plan no incluye la capacidad | No | Texto en el chat |
 | `GATEWAY.USAGE_LIMIT_EXCEEDED.<constraint>` | 403, cuota del plan | No | Como `QUOTA_EXHAUSTED.*` (la app pone el `plan_code` de la sesión, que el Gateway no dice) y vuelve a pedir `user-usage` |
 | `GATEWAY.TOKEN_LIMIT_EXCEEDED` | 403, cuota de tokens | No | ídem |
+| `GATEWAY.WINDOW_LIMIT_EXCEEDED` | 429, la ventana de uso del plan está llena (`window_in_minutes`) | No | ídem; telemetría da `QUOTA_EXHAUSTED.*` con `resets_at` = fin de la ventana |
 | `GATEWAY.RATE_LIMIT_EXCEEDED` | 429 | No | Texto en el chat: «Demasiadas peticiones, espera un momento» |
 | `GATEWAY.EMAIL_NOT_VERIFIED` | 403 | No | Mensaje para verificar el correo |
 | `GATEWAY.ACCOUNT_NOT_READY` | 403 | No | Texto en el chat |

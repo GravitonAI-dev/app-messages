@@ -57,6 +57,15 @@
         "*": "quota_exhausted"
       }
     },
+    "GATEWAY.WINDOW_LIMIT_EXCEEDED": {
+      "priority": 50,
+      "block": false,
+      "recheck": true,
+      "message": {
+        "free_plan": "trial_quota_exhausted",
+        "*": "quota_exhausted"
+      }
+    },
     "PLAN_EXPIRING_SOON": {
       "priority": 20,
       "block": false,
