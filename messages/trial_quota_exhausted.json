@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "id": "trial_quota_exhausted",
+  "enabled": true,
+  "title": {
+    "es": "Has agotado la IA de tu prueba",
+    "en": "You've used up your trial's AI"
+  },
+  "size": "md",
+  "position": "bottom",
+  "backdrop": "none",
+  "dismissible": true,
+  "persistent": true,
+  "auto_close": 0,
+  "priority": 50,
+  "html_file": {
+    "es": "trial_quota_exhausted.html",
+    "en": "trial_quota_exhausted.en.html"
+  },
+  "actions": [
+    {
+      "label": {
+        "es": "Activar {{plan.basic_plan.name}}",
+        "en": "Activate {{plan.basic_plan.name}}"
+      },
+      "action": "checkout",
+      "variant": "primary"
+    }
+  ]
+}

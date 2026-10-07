@@ -1,0 +1,8 @@
+<!-- trial_quota_exhausted · cuerpo del AppDialog abajo centrado, encima del cuadro de entrada (mismo marco que quota_exhausted).
+     La cuota del trial no se renueva: sólo vuelve activando un plan. Sin «Esperar a la renovación».
+     La barra es una tabla de una celda vacía: su alto (6 px) lo da el padding de la tabla, que la app pinta como un Table nativo con fondo y radio. -->
+<p style="margin:0 0 16px 0;text-align:left;font-size:13px;line-height:1.5;color:{{c.textSecondary}};">La cuota de la prueba no se renueva. Activa el <strong style="color:{{c.brandPrimary}};">Plan {{plan.basic_plan.name}}</strong> para seguir usando la IA; tus documentos, clientes y librerías siguen disponibles.</p>
+<table style="width:100%;background:{{c.danger}};border-radius:3px;padding:3px 0;margin:0 0 8px 0;"><tr><td style="padding:0;height:0;"></td></tr></table>
+<table style="width:100%;margin:0;padding:0;font-size:12.5px;">
+  <tr><td style="width:75%;padding:0;text-align:left;color:{{c.textTertiary}};">Consumo de IA de la prueba</td><td style="width:25%;padding:0;text-align:right;font-weight:700;color:{{c.dangerText}};">{{usage_percentage}} %</td></tr>
+</table>

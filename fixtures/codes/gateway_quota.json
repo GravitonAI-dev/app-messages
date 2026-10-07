@@ -1,0 +1,7 @@
+{
+  "description": "La gateway rechaza el envío de un trial por la cuota, antes de que telemetría conteste (la app pone el plan de la sesión): el aviso del trial, y vuelve a preguntar a telemetría",
+  "codes": [
+    { "code": "GATEWAY.USAGE_LIMIT_EXCEEDED.max_input_tokens", "params": { "plan_code": "free_plan" } }
+  ],
+  "expected": { "block": false, "visible_now": ["trial_quota_exhausted"], "queue": ["trial_quota_exhausted"] }
+}

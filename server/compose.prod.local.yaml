@@ -1,0 +1,28 @@
+# Everything local, compiled: the same server build as production, next to the
+# local ecosystem (Gateway Monorepo/docs/local-ecosystem.md). On top of
+# compose.yaml:
+#
+#   cp .env.prod.local.example .env.prod.local
+#   make up-local     (docker compose -f compose.yaml -f compose.prod.local.yaml
+#                      --env-file .env.prod.local up -d --build)
+#
+# Differences with compose.yaml (production):
+# - Variables: only .env.prod.local (`!override` drops .env and .env.prod).
+#   --env-file makes Compose take HOST_PORT (3042 locally) from it too.
+# - Built here as app-messages:local: it never pulls or overwrites the GHCR image.
+# - The content (index.json, codes.json, messages/…) is this clone, mounted
+#   read-only, instead of the copy inside the image: edit a message and
+#   `make reload-local` (or restart), no rebuild.
+# - No host network: it calls no other service.
+services:
+  app-messages:
+    image: app-messages:local
+    env_file: !override
+      - path: .env.prod.local
+        required: true
+    environment:
+      APP_ENV: prod.local
+      CONTENT_DIR: /content
+    volumes:
+      - ..:/content:ro
+    restart: "no"
