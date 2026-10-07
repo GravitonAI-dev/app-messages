@@ -1,5 +1,5 @@
 {
   "description": "Plan de pago caducado por fecha: la variante \"*\" del mismo código",
-  "codes": [{ "code": "PLAN_EXPIRED.DAYS_LIMIT_REACHED", "params": { "plan_code": "basic_plan", "created_at": "2026-09-01T10:00:00Z", "expires_at": "2026-10-01T10:00:00Z", "max_days": 30 } }],
+  "codes": [{ "code": "PLAN_EXPIRED.DAYS_LIMIT_REACHED", "params": { "plan_code": "plan_01", "created_at": "2026-09-01T10:00:00Z", "expires_at": "2026-10-01T10:00:00Z", "max_days": 30 } }],
   "expected": { "block": true, "visible_now": ["subscription_expired"], "queue": ["subscription_expired"] }
 }

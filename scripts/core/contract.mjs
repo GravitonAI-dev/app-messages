@@ -7,7 +7,7 @@ export const BACKDROPS = ['blur', 'none'];
 export const COLOR_ROLES = ['brandPrimary', 'brandHover', 'accentSoft', 'accentLine', 'textOnAccent', 'surface', 'surfaceMuted', 'surfaceRaised',
   'textPrimary', 'textHeading', 'textSecondary', 'textMuted', 'textTertiary', 'border', 'divider', 'controlBorder', 'controlFill',
   'success', 'successSurface', 'warning', 'warningSurface', 'danger', 'dangerText', 'dangerSurface', 'infoSurface', 'logoText', 'brandSurface', 'brandLight'];
-export const PLAN_CODES = ['basic_plan', 'pro_plan', 'lex_pro_plan'];
+export const PLAN_CODES = ['plan_01', 'plan_02', 'plan_03'];
 export const ACTIONS = ['checkout', 'url', 'recheck', 'dismiss', 'signout'];
 export const VARIANTS = ['primary', 'secondary', 'ghost', 'danger'];
 export const TONES = ['info', 'success', 'warning', 'danger'];

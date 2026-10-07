@@ -1,5 +1,5 @@
 {
   "description": "Un código que el catálogo aún no conoce (p. ej. uno nuevo de telemetría antes de tener mensaje): se ignora",
-  "codes": [{ "code": "PLAN_CANCELED", "params": { "plan_code": "basic_plan" } }],
+  "codes": [{ "code": "PLAN_CANCELED", "params": { "plan_code": "plan_01" } }],
   "expected": { "block": false, "visible_now": [], "queue": [] }
 }

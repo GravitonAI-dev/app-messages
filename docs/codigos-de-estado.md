@@ -46,7 +46,7 @@ Y para las suscripciones de pago:
 ## 1. Formato de un código
 
 ```json
-{ "code": "QUOTA_EXHAUSTED.INPUT_TOKENS_LIMIT_REACHED", "params": { "plan_code": "free_plan", "used": 500000, "limit": 500000 } }
+{ "code": "QUOTA_EXHAUSTED.INPUT_TOKENS_LIMIT_REACHED", "params": { "plan_code": "plan_00", "used": 500000, "limit": 500000 } }
 ```
 
 - **`code`**: `<SITUACIÓN>.<MOTIVO>`, en mayúsculas. Los motivos son los que telemetría ya usa por dentro (`DAYS_LIMIT_REACHED`, `INPUT_TOKENS_LIMIT_REACHED`…).
@@ -65,8 +65,8 @@ Hay códigos de dos tipos:
 
 | Código | Cuándo | `params` | Bloquea | Mensaje |
 |---|---|---|---|---|
-| `PLAN_EXPIRED.DAYS_LIMIT_REACHED` | `now >= created_at + max_days` de la membresía en vigor, **aunque antes se agotara la cuota** | `plan_code`, `plan_name`, `created_at`, `expires_at`, `max_days` | Sí | `trial_expired` si `plan_code` es `free_plan`; si no, `subscription_expired` |
-| `QUOTA_EXHAUSTED.PROMPTS_LIMIT_REACHED` | Contador de prompts ≥ `max_prompts` (un límite con ventana no cuenta: se renueva solo) | `plan_code`, `used`, `limit`, `usage_percentage`, `since`, `resets_at` (hoy `null`) | No | `trial_quota_exhausted` si `plan_code` es `free_plan`; si no, `quota_exhausted` |
+| `PLAN_EXPIRED.DAYS_LIMIT_REACHED` | `now >= created_at + max_days` de la membresía en vigor, **aunque antes se agotara la cuota** | `plan_code`, `plan_name`, `created_at`, `expires_at`, `max_days` | Sí | `trial_expired` si `plan_code` es `plan_00`; si no, `subscription_expired` |
+| `QUOTA_EXHAUSTED.PROMPTS_LIMIT_REACHED` | Contador de prompts ≥ `max_prompts` (un límite con ventana no cuenta: se renueva solo) | `plan_code`, `used`, `limit`, `usage_percentage`, `since`, `resets_at` (hoy `null`) | No | `trial_quota_exhausted` si `plan_code` es `plan_00`; si no, `quota_exhausted` |
 | `QUOTA_EXHAUSTED.INPUT_TOKENS_LIMIT_REACHED` | Tokens de entrada ≥ `max_input_tokens` | ídem | No | ídem |
 | `QUOTA_EXHAUSTED.OUTPUT_TOKENS_LIMIT_REACHED` | Tokens de salida ≥ `max_output_tokens` | ídem | No | ídem |
 | `PLAN_REVOKED` | La membresía que se responde está revocada (`expired_reason: revoked`): no queda ninguna en vigor. Hoy es la suscripción impagada (Stripe la termina tras los reintentos) o una baja de un administrador | `plan_code` | Sí | `payment_failed` |
@@ -114,7 +114,7 @@ En `GET /api/user-usage/{uid}` se **añade** un campo. No se quita ni se cambia 
   "status_codes": [                     // NUEVO: siempre presente; [] si no pasa nada
     {
       "code": "QUOTA_EXHAUSTED.INPUT_TOKENS_LIMIT_REACHED",
-      "params": { "plan_code": "free_plan", "used": 500000, "limit": 500000,
+      "params": { "plan_code": "plan_00", "used": 500000, "limit": 500000,
                   "since": "2026-10-02T13:03:34.478Z", "resets_at": null }
     }
   ]
@@ -171,16 +171,16 @@ Si la caducidad que se guarda en MongoDB (lo que lee el Gateway) debe distinguir
   "codes": {
     "PLAN_EXPIRED.DAYS_LIMIT_REACHED": {
       "priority": 110, "block": true,
-      "message": { "free_plan": "trial_expired", "*": "subscription_expired" }
+      "message": { "plan_00": "trial_expired", "*": "subscription_expired" }
     },
     "GATEWAY.INSUFFICIENT_CAPABILITY.max_days": {
       "priority": 100, "block": true, "recheck": true,
       "message": "plan_expired"
     },
     "PLAN_REVOKED":                       { "priority": 105, "block": true, "message": "payment_failed" },
-    "QUOTA_EXHAUSTED.*":                  { "priority": 50, "block": false, "message": { "free_plan": "trial_quota_exhausted", "*": "quota_exhausted" } },
-    "GATEWAY.USAGE_LIMIT_EXCEEDED.*":     { "priority": 50, "block": false, "recheck": true, "message": { "free_plan": "trial_quota_exhausted", "*": "quota_exhausted" } },
-    "GATEWAY.TOKEN_LIMIT_EXCEEDED":       { "priority": 50, "block": false, "recheck": true, "message": { "free_plan": "trial_quota_exhausted", "*": "quota_exhausted" } },
+    "QUOTA_EXHAUSTED.*":                  { "priority": 50, "block": false, "message": { "plan_00": "trial_quota_exhausted", "*": "quota_exhausted" } },
+    "GATEWAY.USAGE_LIMIT_EXCEEDED.*":     { "priority": 50, "block": false, "recheck": true, "message": { "plan_00": "trial_quota_exhausted", "*": "quota_exhausted" } },
+    "GATEWAY.TOKEN_LIMIT_EXCEEDED":       { "priority": 50, "block": false, "recheck": true, "message": { "plan_00": "trial_quota_exhausted", "*": "quota_exhausted" } },
     "PLAN_STARTED":                       { "priority": 40, "block": false, "message": "purchase_success" },
     "PLAN_EXPIRING_SOON":                 { "priority": 20, "block": false, "message": "trial_ending_soon" },
     "GATEWAY.EMAIL_NOT_VERIFIED":         { "priority": 60, "block": false, "message": "email_not_verified" },
@@ -232,7 +232,7 @@ Si la caducidad que se guarda en MongoDB (lo que lee el Gateway) debe distinguir
 
 1. ~~**`PLAN_REVOKED`**~~: decidido (ver la tabla de suscripciones de pago); sale `payment_failed`. Pendiente: la cancelación (§8).
 2. **¿La cuota se renueva?** Decidido por tipo de plan:
-   - **Trial** (`free_plan`): no se renueva. Agotada, solo vuelve activando un plan; si espera, el trial caduca por fecha (`PLAN_EXPIRED`). Mensaje `trial_quota_exhausted`, sin «Esperar a la renovación».
+   - **Trial** (`plan_00`): no se renueva. Agotada, solo vuelve activando un plan; si espera, el trial caduca por fecha (`PLAN_EXPIRED`). Mensaje `trial_quota_exhausted`, sin «Esperar a la renovación».
    - **Plan de pago:** tendrá ventanas de uso (en desarrollo). Mensaje `quota_exhausted` con «Se renueva {{usage_reset}}»; cuando estén, telemetría da `resets_at` y la app lo pone en `usage_reset` (hoy `null`: texto genérico).
 3. **Lo que guarda MongoDB:** ¿la caducidad guardada (lo que lee el Gateway) también debe separar fecha y cuota? Si una cuota agotada no debe impedir el resto de la app pero sí el chat, el Gateway ya lo resuelve con la capacidad o la cuota (`USAGE_LIMIT_EXCEEDED`). Conviene revisarlo con quien lleve el Gateway.
 4. **`N` de `PLAN_EXPIRING_SOON`** y la ventana de `PLAN_STARTED` (24 h): ¿configuración de telemetría o fijos?

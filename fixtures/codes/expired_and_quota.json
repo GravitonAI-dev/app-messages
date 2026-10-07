@@ -1,8 +1,8 @@
 {
   "description": "Cuota agotada y después la fecha pasada: gana el muro del trial, la cuota espera detrás",
   "codes": [
-    { "code": "PLAN_EXPIRED.DAYS_LIMIT_REACHED", "params": { "plan_code": "free_plan", "created_at": "2026-09-25T10:00:00Z", "expires_at": "2026-10-02T10:00:00Z", "max_days": 7 } },
-    { "code": "QUOTA_EXHAUSTED.INPUT_TOKENS_LIMIT_REACHED", "params": { "plan_code": "free_plan", "used": 500000, "limit": 500000, "usage_percentage": 100 } }
+    { "code": "PLAN_EXPIRED.DAYS_LIMIT_REACHED", "params": { "plan_code": "plan_00", "created_at": "2026-09-25T10:00:00Z", "expires_at": "2026-10-02T10:00:00Z", "max_days": 7 } },
+    { "code": "QUOTA_EXHAUSTED.INPUT_TOKENS_LIMIT_REACHED", "params": { "plan_code": "plan_00", "used": 500000, "limit": 500000, "usage_percentage": 100 } }
   ],
   "expected": { "block": true, "visible_now": ["trial_expired"], "queue": ["trial_expired", "trial_quota_exhausted"] }
 }

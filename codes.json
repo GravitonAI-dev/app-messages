@@ -5,7 +5,7 @@
       "priority": 110,
       "block": true,
       "message": {
-        "free_plan": "trial_expired",
+        "plan_00": "trial_expired",
         "*": "subscription_expired"
       }
     },
@@ -35,7 +35,7 @@
       "priority": 50,
       "block": false,
       "message": {
-        "free_plan": "trial_quota_exhausted",
+        "plan_00": "trial_quota_exhausted",
         "*": "quota_exhausted"
       }
     },
@@ -44,7 +44,7 @@
       "block": false,
       "recheck": true,
       "message": {
-        "free_plan": "trial_quota_exhausted",
+        "plan_00": "trial_quota_exhausted",
         "*": "quota_exhausted"
       }
     },
@@ -53,7 +53,7 @@
       "block": false,
       "recheck": true,
       "message": {
-        "free_plan": "trial_quota_exhausted",
+        "plan_00": "trial_quota_exhausted",
         "*": "quota_exhausted"
       }
     },
@@ -62,7 +62,7 @@
       "block": false,
       "recheck": true,
       "message": {
-        "free_plan": "trial_quota_exhausted",
+        "plan_00": "trial_quota_exhausted",
         "*": "quota_exhausted"
       }
     },
@@ -70,7 +70,7 @@
       "priority": 20,
       "block": false,
       "message": {
-        "free_plan": "trial_ending_soon"
+        "plan_00": "trial_ending_soon"
       }
     }
   },
