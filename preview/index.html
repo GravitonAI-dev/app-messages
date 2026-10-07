@@ -93,8 +93,8 @@ const THEMES = {
 };
 // Variables de ejemplo por idioma (la app las rellena con los datos reales).
 const VARS_BY_LANG = {
-  es: { user_name: 'Laura', plan_name: 'Trial', plan_end_date: '2 de octubre de 2026', days_left: '2', usage_percentage: '100', usage_reset: 'mañana a las 00:00', usage_since: 'desde el 13 de septiembre', 'plan.basic_plan.name': 'Confidential', 'plan.pro_plan.name': 'Extended', 'plan.lex_pro_plan.name': 'Abogados' },
-  en: { ...{ user_name: 'Laura', plan_name: 'Trial', plan_end_date: '2 de octubre de 2026', days_left: '2', usage_percentage: '100', usage_reset: 'mañana a las 00:00', usage_since: 'desde el 13 de septiembre', 'plan.basic_plan.name': 'Confidential', 'plan.pro_plan.name': 'Extended', 'plan.lex_pro_plan.name': 'Abogados' }, plan_end_date: 'October 2, 2026', usage_reset: 'tomorrow at 00:00', usage_since: 'since September 13' },
+  es: { user_name: 'Laura', plan_name: 'Trial', plan_end_date: '2 de octubre de 2026', days_left: '2', usage_percentage: '100', usage_reset: 'mañana a las 00:00', usage_since: 'desde el 13 de septiembre', 'plan.plan_01.name': 'Confidential', 'plan.plan_02.name': 'Extended', 'plan.plan_03.name': 'Abogados' },
+  en: { ...{ user_name: 'Laura', plan_name: 'Trial', plan_end_date: '2 de octubre de 2026', days_left: '2', usage_percentage: '100', usage_reset: 'mañana a las 00:00', usage_since: 'desde el 13 de septiembre', 'plan.plan_01.name': 'Confidential', 'plan.plan_02.name': 'Extended', 'plan.plan_03.name': 'Abogados' }, plan_end_date: 'October 2, 2026', usage_reset: 'tomorrow at 00:00', usage_since: 'since September 13' },
 };
 let lang = new URLSearchParams(location.search).get('lang') === 'en' ? 'en' : 'es';
 let VARS = VARS_BY_LANG[lang];
@@ -120,8 +120,8 @@ async function load(id) {
     if (e.message === id) via.push(code);
     else if (e.message && typeof e.message === 'object') for (const [plan, mid] of Object.entries(e.message)) if (mid === id) via.push(`${code} (${plan})`);
   }
-  // El plan actual según el mensaje: Trial si sale para free_plan, Confidential si no
-  VARS.plan_name = via.some((v) => v.includes('(free_plan)')) ? 'Trial' : 'Confidential';
+  // El plan actual según el mensaje: Trial si sale para plan_00, Confidential si no
+  VARS.plan_name = via.some((v) => v.includes('(plan_00)')) ? 'Trial' : 'Confidential';
   let html = pick(m.html) ?? await (await fetch('../messages/' + pick(m.html_file))).text();
   const t = THEMES[theme];
   html = html.replace(/\{\{\s*([a-zA-Z_.]+)\s*\}\}/g, (_, k) => k.startsWith('c.') ? (t[k.slice(2)] ?? 'magenta') : (VARS[k] ?? ''))

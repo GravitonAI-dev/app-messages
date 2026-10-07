@@ -100,7 +100,7 @@ function validateMessage(code, file) {
       if (a.action === 'url' && !/^https:\/\//.test(a.url ?? '')) fail(where, `actions[${i}]: la acción url necesita "url" https://`);
       if (a.action !== 'url' && 'url' in a) fail(where, `actions[${i}]: "url" solo va con la acción url`);
       if (('plan' in a || 'interval' in a) && a.action !== 'checkout') fail(where, `actions[${i}]: "plan"/"interval" solo van con la acción checkout`);
-      if ('plan' in a && !PLAN_CODES.includes(a.plan)) fail(where, `actions[${i}]: plan "${a.plan}" desconocido (basic_plan, pro_plan, lex_pro_plan)`);
+      if ('plan' in a && !PLAN_CODES.includes(a.plan)) fail(where, `actions[${i}]: plan "${a.plan}" desconocido (plan_01, plan_02, plan_03)`);
       if ('interval' in a && !['month', 'year'].includes(a.interval)) fail(where, `actions[${i}]: interval "${a.interval}" inválido (month, year)`);
       if ('variant' in a && !VARIANTS.includes(a.variant)) fail(where, `actions[${i}]: variant "${a.variant}" inválido (${VARIANTS.join(', ')})`);
     });

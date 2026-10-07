@@ -147,10 +147,10 @@ Para cada código, qué mensaje sale, en qué orden y si bloquea. Los códigos, 
 {
   "schema_version": 1,
   "codes": {
-    "PLAN_EXPIRED.DAYS_LIMIT_REACHED":          { "priority": 110, "block": true, "message": { "free_plan": "trial_expired", "*": "subscription_expired" } },
+    "PLAN_EXPIRED.DAYS_LIMIT_REACHED":          { "priority": 110, "block": true, "message": { "plan_00": "trial_expired", "*": "subscription_expired" } },
     "PLAN_REVOKED":                             { "priority": 105, "block": true, "message": "payment_failed" },
     "GATEWAY.INSUFFICIENT_CAPABILITY.max_days": { "priority": 100, "block": true, "recheck": true, "message": "plan_expired" },
-    "PLAN_EXPIRING_SOON":                       { "priority": 20,  "block": false, "message": { "free_plan": "trial_ending_soon" } }
+    "PLAN_EXPIRING_SOON":                       { "priority": 20,  "block": false, "message": { "plan_00": "trial_ending_soon" } }
   },
   "fallback": null
 }
@@ -197,7 +197,7 @@ La app las sustituye antes de pintar, en el HTML y también en `title` y en las 
 |---|---|
 | `{{user_name}}`, `{{user.name}}` | Nombre del usuario (billing y, si no hay, el de la sesión) |
 | `{{plan_name}}` | Nombre del plan actual |
-| `{{plan.<código>.name}}` | Nombre comercial de un plan según billing (`getPlans` → `display_name`): `plan.basic_plan.name`, `plan.pro_plan.name`, `plan.lex_pro_plan.name`. Los nombres de plan nunca se escriben a mano |
+| `{{plan.<código>.name}}` | Nombre comercial de un plan según billing (`getPlans` → `display_name`): `plan.plan_01.name`, `plan.plan_02.name`, `plan.plan_03.name`. Los nombres de plan nunca se escriben a mano |
 | `{{params.<clave>}}` | Un dato del código que trajo el mensaje, tal cual (p. ej. `{{params.max_days}}`) |
 | `{{plan_end_date}}` | `params.expires_at` como fecha larga: «9 de octubre de 2026» |
 | `{{days_left}}` | `params.days_left` |
@@ -264,12 +264,12 @@ node scripts/test-fixtures.mjs
 
 | id | Con qué código (`codes.json`) | Marco | Tono |
 |---|---|---|---|
-| `trial_expired` | `PLAN_EXPIRED.DAYS_LIMIT_REACHED` con `plan_code: free_plan` | AppDialog, blur, persistente, sin X | brand |
+| `trial_expired` | `PLAN_EXPIRED.DAYS_LIMIT_REACHED` con `plan_code: plan_00` | AppDialog, blur, persistente, sin X | brand |
 | `subscription_expired` | `PLAN_EXPIRED.DAYS_LIMIT_REACHED` con otro plan | AppDialog, blur, persistente, sin X; mismo diseño que `trial_expired` | brand |
 | `plan_expired` | `GATEWAY.INSUFFICIENT_CAPABILITY.max_days`, hasta que telemetría confirma el plan | AppDialog, blur, persistente, sin X | danger |
 | `payment_failed` | `PLAN_REVOKED`: suscripción impagada (Stripe la terminó) sin otro plan ni trial en vigor | AppDialog, blur, persistente, sin X; «Ya lo he pagado» y «Revisar el pago» | danger |
-| `no_plan` | `NO_PLAN`: la cuenta no tiene ningún plan (p. ej. volvió a registrarse con el correo de una cuenta borrada, sin trial) | AppDialog, blur, persistente, sin X; mismo diseño que `trial_expired`, con «Volver a comprobar» y «Activar {{plan.basic_plan.name}}» | danger |
-| `trial_ending_soon` | `PLAN_EXPIRING_SOON` con `plan_code: free_plan` | AppBanner abajo a la derecha, con X, se cierra a los 10 s | info |
-| `quota_exhausted` | `QUOTA_EXHAUSTED.*` (telemetría), `GATEWAY.USAGE_LIMIT_EXCEEDED.*` y `GATEWAY.TOKEN_LIMIT_EXCEEDED` (rechazo del chat) con un plan de pago: «Se renueva…» (ventanas de uso) | AppDialog abajo centrado, encima del cuadro de entrada del chat; sin blur, con X | danger |
-| `trial_quota_exhausted` | Los mismos códigos con `plan_code: free_plan`: la cuota del trial no se renueva, sólo «Activar {{plan.basic_plan.name}}» | AppDialog abajo centrado, encima del cuadro de entrada del chat; sin blur, con X | danger |
+| `no_plan` | `NO_PLAN`: la cuenta no tiene ningún plan (p. ej. volvió a registrarse con el correo de una cuenta borrada, sin trial) | AppDialog, blur, persistente, sin X; mismo diseño que `trial_expired`, con «Volver a comprobar» y «Activar {{plan.plan_01.name}}» | danger |
+| `trial_ending_soon` | `PLAN_EXPIRING_SOON` con `plan_code: plan_00` | AppBanner abajo a la derecha, con X, se cierra a los 10 s | info |
+| `quota_exhausted` | `QUOTA_EXHAUSTED.*` (telemetría), `GATEWAY.USAGE_LIMIT_EXCEEDED.*`, `GATEWAY.INSUFFICIENT_CAPABILITY.*`, `GATEWAY.WINDOW_LIMIT_EXCEEDED` y `GATEWAY.TOKEN_LIMIT_EXCEEDED` (rechazo del chat) con un plan de pago: «Se renueva…» (ventanas de uso) | AppDialog abajo centrado, encima del cuadro de entrada del chat; sin blur, con X | danger |
+| `trial_quota_exhausted` | Los mismos códigos con `plan_code: plan_00`: la cuota del trial no se renueva, sólo «Activar {{plan.plan_01.name}}» | AppDialog abajo centrado, encima del cuadro de entrada del chat; sin blur, con X | danger |
 | `purchase_success` | Ninguno todavía (`PLAN_STARTED`, pendiente) | AppDialog, blur, con X, una sola vez | success |

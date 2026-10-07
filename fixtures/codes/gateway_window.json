@@ -1,0 +1,20 @@
+{
+  "description": "La gateway rechaza por la ventana de uso llena (WINDOW_LIMIT_EXCEEDED) en un plan de pago: el aviso de cuota de pago, y la app vuelve a preguntar a telemetría",
+  "codes": [
+    {
+      "code": "GATEWAY.WINDOW_LIMIT_EXCEEDED",
+      "params": {
+        "plan_code": "plan_01"
+      }
+    }
+  ],
+  "expected": {
+    "block": false,
+    "visible_now": [
+      "quota_exhausted"
+    ],
+    "queue": [
+      "quota_exhausted"
+    ]
+  }
+}
