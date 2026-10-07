@@ -2,7 +2,7 @@
   "description": "Rechazo del Gateway y, ya, el código de telemetría: gana el muro del trial (prioridad 110 frente a 100)",
   "codes": [
     { "code": "GATEWAY.INSUFFICIENT_CAPABILITY.max_days", "params": {} },
-    { "code": "PLAN_EXPIRED.DAYS_LIMIT_REACHED", "params": { "plan_code": "free_plan", "created_at": "2026-09-25T10:00:00Z", "expires_at": "2026-10-02T10:00:00Z", "max_days": 7 } }
+    { "code": "PLAN_EXPIRED.DAYS_LIMIT_REACHED", "params": { "plan_code": "plan_00", "created_at": "2026-09-25T10:00:00Z", "expires_at": "2026-10-02T10:00:00Z", "max_days": 7 } }
   ],
   "expected": { "block": true, "visible_now": ["trial_expired"], "queue": ["trial_expired", "plan_expired"] }
 }

@@ -4,7 +4,7 @@
     {
       "code": "GATEWAY.WINDOW_LIMIT_EXCEEDED",
       "params": {
-        "plan_code": "basic_plan"
+        "plan_code": "plan_01"
       }
     }
   ],

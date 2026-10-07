@@ -1,6 +1,6 @@
 {
   "description": "El mismo aviso ya cerrado: no es persistente, no vuelve",
   "dismissed": ["trial_ending_soon"],
-  "codes": [{ "code": "PLAN_EXPIRING_SOON", "params": { "plan_code": "free_plan", "expires_at": "2026-10-07T10:00:00Z", "days_left": 2 } }],
+  "codes": [{ "code": "PLAN_EXPIRING_SOON", "params": { "plan_code": "plan_00", "expires_at": "2026-10-07T10:00:00Z", "days_left": 2 } }],
   "expected": { "block": false, "visible_now": [], "queue": [] }
 }

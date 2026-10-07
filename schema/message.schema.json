@@ -184,9 +184,9 @@
           },
           "plan": {
             "enum": [
-              "basic_plan",
-              "pro_plan",
-              "lex_pro_plan"
+              "plan_01",
+              "plan_02",
+              "plan_03"
             ],
             "description": "Solo con checkout: plan preseleccionado"
           },

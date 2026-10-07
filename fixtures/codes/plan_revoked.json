@@ -4,7 +4,7 @@
     {
       "code": "PLAN_REVOKED",
       "params": {
-        "plan_code": "basic_plan"
+        "plan_code": "plan_01"
       }
     }
   ],

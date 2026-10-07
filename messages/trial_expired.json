@@ -16,8 +16,8 @@
   "actions": [
     {
       "label": {
-        "es": "Activar {{plan.basic_plan.name}}",
-        "en": "Activate {{plan.basic_plan.name}}"
+        "es": "Activar {{plan.plan_01.name}}",
+        "en": "Activate {{plan.plan_01.name}}"
       },
       "action": "checkout",
       "variant": "primary"
