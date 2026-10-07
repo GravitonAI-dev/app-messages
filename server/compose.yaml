@@ -1,12 +1,18 @@
-# En el VPS: `docker compose pull && docker compose up -d` (la imagen la publica la CI).
-# En local: `docker compose up --build`.
+# Production server (the VPS): `docker compose pull && docker compose up -d`
+# (CI publishes the image; see .github/workflows/deploy.yml). Variables: .env
+# and/or .env.prod; when both exist, .env wins (env_file: the last file wins).
+# Locally, compiled: `make up-local` (compose.prod.local.yaml, .env.prod.local).
 services:
   app-messages:
     image: ghcr.io/gravitonai-dev/app-messages:${IMAGE_TAG:-latest}
     build:
       context: ..
       dockerfile: server/Dockerfile
-    env_file: .env
+    env_file:
+      - path: .env.prod
+        required: false
+      - path: .env
+        required: false
     environment:
       PORT: 3000
     ports:
