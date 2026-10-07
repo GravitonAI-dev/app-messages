@@ -1,0 +1,20 @@
+{
+  "description": "La gateway rechaza por cuota como capacidad que falta (INSUFFICIENT_CAPABILITY.max_input_tokens): telemetría ya quitó el chat por la ventana llena. Es el aviso de cuota, no el rojo, y la app vuelve a preguntar a telemetría",
+  "codes": [
+    {
+      "code": "GATEWAY.INSUFFICIENT_CAPABILITY.max_input_tokens",
+      "params": {
+        "plan_code": "plan_00"
+      }
+    }
+  ],
+  "expected": {
+    "block": false,
+    "visible_now": [
+      "trial_quota_exhausted"
+    ],
+    "queue": [
+      "trial_quota_exhausted"
+    ]
+  }
+}

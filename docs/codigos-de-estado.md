@@ -1,6 +1,6 @@
 # Códigos de estado: telemetría, Gateway y app-messages
 
-**Estado:** en implementación: `PLAN_EXPIRED.DAYS_LIMIT_REACHED`, `PLAN_EXPIRING_SOON`, `PLAN_REVOKED`, `NO_PLAN`, `QUOTA_EXHAUSTED.*` y, de la Gateway, `GATEWAY.INSUFFICIENT_CAPABILITY.max_days` (también como `USAGE_LIMIT_EXCEEDED.max_days`), `GATEWAY.USAGE_LIMIT_EXCEEDED.*` y `GATEWAY.TOKEN_LIMIT_EXCEEDED`. Cuándo se renueva la cuota (`resets_at`) sigue pendiente (§6). El catálogo vigente es `codes.json`; el ejemplo del §4 es el catálogo completo al que se quiere llegar.
+**Estado:** en implementación: `PLAN_EXPIRED.DAYS_LIMIT_REACHED`, `PLAN_EXPIRING_SOON`, `PLAN_REVOKED`, `NO_PLAN`, `QUOTA_EXHAUSTED.*` y, de la Gateway, `GATEWAY.INSUFFICIENT_CAPABILITY.max_days` (también como `USAGE_LIMIT_EXCEEDED.max_days`), `GATEWAY.USAGE_LIMIT_EXCEEDED.*`, `GATEWAY.INSUFFICIENT_CAPABILITY.*` (cuota), `GATEWAY.WINDOW_LIMIT_EXCEEDED` y `GATEWAY.TOKEN_LIMIT_EXCEEDED`. Cuándo se renueva la cuota (`resets_at`) sigue pendiente (§6). El catálogo vigente es `codes.json`; el ejemplo del §4 es el catálogo completo al que se quiere llegar.
 
 ## Por qué
 
@@ -85,6 +85,7 @@ El Gateway no cambia: el código del catálogo se forma con lo que ya responde, 
 | `GATEWAY.INSUFFICIENT_CAPABILITY.max_days` | 403, plan caducado por tiempo | Sí | Muro genérico (`plan_expired`: el Gateway no dice el plan) y vuelve a pedir `user-usage`, que trae `PLAN_EXPIRED` con el plan y gana por prioridad |
 | `GATEWAY.INSUFFICIENT_CAPABILITY` | 403, el plan no incluye la capacidad | No | Texto en el chat |
 | `GATEWAY.USAGE_LIMIT_EXCEEDED.<constraint>` | 403, cuota del plan | No | Como `QUOTA_EXHAUSTED.*` (la app pone el `plan_code` de la sesión, que el Gateway no dice) y vuelve a pedir `user-usage` |
+| `GATEWAY.INSUFFICIENT_CAPABILITY.<constraint>` | 403, cuota del plan: la Gateway lo dice así cuando telemetría ya quitó el permiso (p. ej. la ventana llena) y el motivo es un límite de uso | No | ídem (`max_days` tiene su propia entrada: muro) |
 | `GATEWAY.TOKEN_LIMIT_EXCEEDED` | 403, cuota de tokens | No | ídem |
 | `GATEWAY.WINDOW_LIMIT_EXCEEDED` | 429, la ventana de uso del plan está llena (`window_in_minutes`) | No | ídem; telemetría da `QUOTA_EXHAUSTED.*` con `resets_at` = fin de la ventana |
 | `GATEWAY.RATE_LIMIT_EXCEEDED` | 429 | No | Texto en el chat: «Demasiadas peticiones, espera un momento» |

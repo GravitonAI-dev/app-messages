@@ -48,6 +48,15 @@
         "*": "quota_exhausted"
       }
     },
+    "GATEWAY.INSUFFICIENT_CAPABILITY.*": {
+      "priority": 50,
+      "block": false,
+      "recheck": true,
+      "message": {
+        "plan_00": "trial_quota_exhausted",
+        "*": "quota_exhausted"
+      }
+    },
     "GATEWAY.TOKEN_LIMIT_EXCEEDED": {
       "priority": 50,
       "block": false,
