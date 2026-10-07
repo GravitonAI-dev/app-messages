@@ -1,6 +1,6 @@
 # Códigos de estado: telemetría, Gateway y app-messages
 
-**Estado:** en implementación: `PLAN_EXPIRED.DAYS_LIMIT_REACHED`, `PLAN_EXPIRING_SOON`, `PLAN_REVOKED` y `GATEWAY.INSUFFICIENT_CAPABILITY.max_days`. La cuota (`QUOTA_EXHAUSTED.*`) y cuándo se renueva quedan para la ventana de tokens. El catálogo vigente es `codes.json`; el ejemplo del §4 es el catálogo completo al que se quiere llegar.
+**Estado:** en implementación: `PLAN_EXPIRED.DAYS_LIMIT_REACHED`, `PLAN_EXPIRING_SOON`, `PLAN_REVOKED`, `NO_PLAN`, `QUOTA_EXHAUSTED.*` y, de la Gateway, `GATEWAY.INSUFFICIENT_CAPABILITY.max_days` (también como `USAGE_LIMIT_EXCEEDED.max_days`), `GATEWAY.USAGE_LIMIT_EXCEEDED.*` y `GATEWAY.TOKEN_LIMIT_EXCEEDED`. Cuándo se renueva la cuota (`resets_at`) sigue pendiente (§6). El catálogo vigente es `codes.json`; el ejemplo del §4 es el catálogo completo al que se quiere llegar.
 
 ## Por qué
 
@@ -66,10 +66,11 @@ Hay códigos de dos tipos:
 | Código | Cuándo | `params` | Bloquea | Mensaje |
 |---|---|---|---|---|
 | `PLAN_EXPIRED.DAYS_LIMIT_REACHED` | `now >= created_at + max_days` de la membresía en vigor, **aunque antes se agotara la cuota** | `plan_code`, `plan_name`, `created_at`, `expires_at`, `max_days` | Sí | `trial_expired` si `plan_code` es `free_plan`; si no, `subscription_expired` |
-| `QUOTA_EXHAUSTED.PROMPTS_LIMIT_REACHED` | Contador de prompts ≥ `max_prompts` | `plan_code`, `used`, `limit`, `since`, `resets_at` | No | `quota_exhausted` |
-| `QUOTA_EXHAUSTED.INPUT_TOKENS_LIMIT_REACHED` | Tokens de entrada ≥ `max_input_tokens` | ídem | No | `quota_exhausted` |
-| `QUOTA_EXHAUSTED.OUTPUT_TOKENS_LIMIT_REACHED` | Tokens de salida ≥ `max_output_tokens` | ídem | No | `quota_exhausted` |
+| `QUOTA_EXHAUSTED.PROMPTS_LIMIT_REACHED` | Contador de prompts ≥ `max_prompts` (un límite con ventana no cuenta: se renueva solo) | `plan_code`, `used`, `limit`, `usage_percentage`, `since`, `resets_at` (hoy `null`) | No | `trial_quota_exhausted` si `plan_code` es `free_plan`; si no, `quota_exhausted` |
+| `QUOTA_EXHAUSTED.INPUT_TOKENS_LIMIT_REACHED` | Tokens de entrada ≥ `max_input_tokens` | ídem | No | ídem |
+| `QUOTA_EXHAUSTED.OUTPUT_TOKENS_LIMIT_REACHED` | Tokens de salida ≥ `max_output_tokens` | ídem | No | ídem |
 | `PLAN_REVOKED` | La membresía que se responde está revocada (`expired_reason: revoked`): no queda ninguna en vigor. Hoy es la suscripción impagada (Stripe la termina tras los reintentos) o una baja de un administrador | `plan_code` | Sí | `payment_failed` |
+| `NO_PLAN` | La cuenta no tiene ninguna membresía (ni en vigor ni caducada): p. ej. volvió a registrarse con el correo de una cuenta borrada y no recibe trial | — | Sí | `no_plan` (con «Volver a comprobar», por si el trial de un alta aún no ha llegado) |
 | `PLAN_EXPIRING_SOON` | Quedan `≤ N` días para `expires_at` (`N` en la configuración de telemetría; hoy 2) | `plan_code`, `expires_at`, `days_left` | No | `trial_ending_soon` |
 | `PLAN_STARTED` | La membresía en vigor es de pago y tiene menos de 24 h | `plan_code`, `plan_name`, `created_at` | No | `purchase_success` |
 
@@ -83,8 +84,8 @@ El Gateway no cambia: el código del catálogo se forma con lo que ya responde, 
 |---|---|---|---|
 | `GATEWAY.INSUFFICIENT_CAPABILITY.max_days` | 403, plan caducado por tiempo | Sí | Muro genérico (`plan_expired`: el Gateway no dice el plan) y vuelve a pedir `user-usage`, que trae `PLAN_EXPIRED` con el plan y gana por prioridad |
 | `GATEWAY.INSUFFICIENT_CAPABILITY` | 403, el plan no incluye la capacidad | No | Texto en el chat |
-| `GATEWAY.USAGE_LIMIT_EXCEEDED.<constraint>` | 403, cuota del plan | No | `quota_exhausted` |
-| `GATEWAY.TOKEN_LIMIT_EXCEEDED` | 403, cuota de tokens | No | `quota_exhausted` |
+| `GATEWAY.USAGE_LIMIT_EXCEEDED.<constraint>` | 403, cuota del plan | No | Como `QUOTA_EXHAUSTED.*` (la app pone el `plan_code` de la sesión, que el Gateway no dice) y vuelve a pedir `user-usage` |
+| `GATEWAY.TOKEN_LIMIT_EXCEEDED` | 403, cuota de tokens | No | ídem |
 | `GATEWAY.RATE_LIMIT_EXCEEDED` | 429 | No | Texto en el chat: «Demasiadas peticiones, espera un momento» |
 | `GATEWAY.EMAIL_NOT_VERIFIED` | 403 | No | Mensaje para verificar el correo |
 | `GATEWAY.ACCOUNT_NOT_READY` | 403 | No | Texto en el chat |
@@ -176,9 +177,9 @@ Si la caducidad que se guarda en MongoDB (lo que lee el Gateway) debe distinguir
       "message": "plan_expired"
     },
     "PLAN_REVOKED":                       { "priority": 105, "block": true, "message": "payment_failed" },
-    "QUOTA_EXHAUSTED.*":                  { "priority": 50, "block": false, "message": "quota_exhausted" },
-    "GATEWAY.USAGE_LIMIT_EXCEEDED.*":     { "priority": 50, "block": false, "message": "quota_exhausted" },
-    "GATEWAY.TOKEN_LIMIT_EXCEEDED":       { "priority": 50, "block": false, "message": "quota_exhausted" },
+    "QUOTA_EXHAUSTED.*":                  { "priority": 50, "block": false, "message": { "free_plan": "trial_quota_exhausted", "*": "quota_exhausted" } },
+    "GATEWAY.USAGE_LIMIT_EXCEEDED.*":     { "priority": 50, "block": false, "recheck": true, "message": { "free_plan": "trial_quota_exhausted", "*": "quota_exhausted" } },
+    "GATEWAY.TOKEN_LIMIT_EXCEEDED":       { "priority": 50, "block": false, "recheck": true, "message": { "free_plan": "trial_quota_exhausted", "*": "quota_exhausted" } },
     "PLAN_STARTED":                       { "priority": 40, "block": false, "message": "purchase_success" },
     "PLAN_EXPIRING_SOON":                 { "priority": 20, "block": false, "message": "trial_ending_soon" },
     "GATEWAY.EMAIL_NOT_VERIFIED":         { "priority": 60, "block": false, "message": "email_not_verified" },
@@ -229,9 +230,9 @@ Si la caducidad que se guarda en MongoDB (lo que lee el Gateway) debe distinguir
 ## 6. Pendiente de decidir
 
 1. ~~**`PLAN_REVOKED`**~~: decidido (ver la tabla de suscripciones de pago); sale `payment_failed`. Pendiente: la cancelación (§8).
-2. **¿La cuota se renueva?** `quota_exhausted` dice «Se renueva {{usage_reset}}». Hoy los contadores no se reinician: la cuota agotada caduca la membresía y solo se sale pagando otra. Hay dos opciones:
-   - si hay periodos (p. ej. mensual con la factura), telemetría da `resets_at`;
-   - si no, el texto de `quota_exhausted` tiene que cambiar («Amplía tu plan…»).
+2. **¿La cuota se renueva?** Decidido por tipo de plan:
+   - **Trial** (`free_plan`): no se renueva. Agotada, solo vuelve activando un plan; si espera, el trial caduca por fecha (`PLAN_EXPIRED`). Mensaje `trial_quota_exhausted`, sin «Esperar a la renovación».
+   - **Plan de pago:** tendrá ventanas de uso (en desarrollo). Mensaje `quota_exhausted` con «Se renueva {{usage_reset}}»; cuando estén, telemetría da `resets_at` y la app lo pone en `usage_reset` (hoy `null`: texto genérico).
 3. **Lo que guarda MongoDB:** ¿la caducidad guardada (lo que lee el Gateway) también debe separar fecha y cuota? Si una cuota agotada no debe impedir el resto de la app pero sí el chat, el Gateway ya lo resuelve con la capacidad o la cuota (`USAGE_LIMIT_EXCEEDED`). Conviene revisarlo con quien lleve el Gateway.
 4. **`N` de `PLAN_EXPIRING_SOON`** y la ventana de `PLAN_STARTED` (24 h): ¿configuración de telemetría o fijos?
 5. **Mensajes nuevos que habría que crear:** `email_not_verified` y los textos `inline` definitivos (`payment_failed` ya existe).
@@ -241,14 +242,14 @@ Si la caducidad que se guarda en MongoDB (lo que lee el Gateway) debe distinguir
 
 | Pieza | Hecho |
 |---|---|
-| Telemetría | `status_codes` en `/api/user-usage` y en el snapshot: `PLAN_EXPIRED.DAYS_LIMIT_REACHED`, `PLAN_EXPIRING_SOON`, `PLAN_REVOKED` (`computeStatusCodes`) |
+| Telemetría | `status_codes` en `/api/user-usage` y en el snapshot: `PLAN_EXPIRED.DAYS_LIMIT_REACHED`, `QUOTA_EXHAUSTED.*`, `PLAN_EXPIRING_SOON`, `PLAN_REVOKED` (`computeStatusCodes`) |
 | app-messages | `codes.json`, validador, `fixtures/codes/`, mensaje `payment_failed`; fuera los `when` y `POST /v1/messages` |
-| App (GPT-UI) | Lee `status_codes` y el rechazo `max_days` del Gateway, los busca en `codes.json`, pinta y bloquea; sin lógica propia de caducidad |
+| App (GPT-UI) | Lee `status_codes` y nombra el rechazo del Gateway (`GATEWAY.<code>[.<constraintCode>]`), los busca en `codes.json`, pinta y bloquea; sin lógica propia de caducidad ni de cuota. Sólo un rechazo que el catálogo no conoce sale como texto |
 | Web | `lib/membership.js` decide con `status_codes` (`PLAN_EXPIRED.*`, `PLAN_REVOKED`); sin ellos, como antes |
 
 Orden de despliegue: telemetría y web a la vez (o la web antes), después `app-messages`, después la app. Una app nueva con una telemetría antigua no recibe códigos y no bloquea; el Gateway sigue rechazando.
 
-Pendiente: la cuota (`QUOTA_EXHAUSTED.*`, con la ventana de tokens), `PLAN_STARTED`, los códigos del Gateway que aún no están en el catálogo, y la cancelación (§8).
+Pendiente: cuándo se renueva la cuota (`resets_at`, §6), `PLAN_STARTED`, los códigos del Gateway que aún no están en el catálogo, y la cancelación (§8).
 
 ## 8. Cancelación de una suscripción (pendiente)
 

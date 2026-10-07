@@ -3,4 +3,8 @@ node_modules/
 server/node_modules/
 server/dist/
 server/dist-test/
+# Real env files never go to git (.env, .env.prod, .env.prod.local…); their
+# templates (*.example) do.
 server/.env
+server/.env.*
+!server/.env*.example

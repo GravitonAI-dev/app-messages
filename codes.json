@@ -14,11 +14,48 @@
       "block": true,
       "message": "payment_failed"
     },
+    "NO_PLAN": {
+      "priority": 100,
+      "block": true,
+      "message": "no_plan"
+    },
     "GATEWAY.INSUFFICIENT_CAPABILITY.max_days": {
       "priority": 100,
       "block": true,
       "recheck": true,
       "message": "plan_expired"
+    },
+    "GATEWAY.USAGE_LIMIT_EXCEEDED.max_days": {
+      "priority": 100,
+      "block": true,
+      "recheck": true,
+      "message": "plan_expired"
+    },
+    "QUOTA_EXHAUSTED.*": {
+      "priority": 50,
+      "block": false,
+      "message": {
+        "free_plan": "trial_quota_exhausted",
+        "*": "quota_exhausted"
+      }
+    },
+    "GATEWAY.USAGE_LIMIT_EXCEEDED.*": {
+      "priority": 50,
+      "block": false,
+      "recheck": true,
+      "message": {
+        "free_plan": "trial_quota_exhausted",
+        "*": "quota_exhausted"
+      }
+    },
+    "GATEWAY.TOKEN_LIMIT_EXCEEDED": {
+      "priority": 50,
+      "block": false,
+      "recheck": true,
+      "message": {
+        "free_plan": "trial_quota_exhausted",
+        "*": "quota_exhausted"
+      }
     },
     "PLAN_EXPIRING_SOON": {
       "priority": 20,

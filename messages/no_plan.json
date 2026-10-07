@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "id": "no_plan",
+  "enabled": true,
+  "size": "lg",
+  "position": "center",
+  "backdrop": "blur",
+  "dismissible": false,
+  "persistent": true,
+  "auto_close": 0,
+  "priority": 100,
+  "html_file": {
+    "es": "no_plan.html",
+    "en": "no_plan.en.html"
+  },
+  "actions": [
+    {
+      "label": {
+        "es": "Volver a comprobar",
+        "en": "Check again"
+      },
+      "action": "recheck",
+      "variant": "secondary"
+    },
+    {
+      "label": {
+        "es": "Activar {{plan.basic_plan.name}}",
+        "en": "Activate {{plan.basic_plan.name}}"
+      },
+      "action": "checkout",
+      "variant": "primary"
+    }
+  ],
+  "footer_link": {
+    "label": {
+      "es": "Acceder al perfil de usuario",
+      "en": "Open your user profile"
+    },
+    "action": "url",
+    "url": "https://confai.app/dashboard/subscription"
+  }
+}

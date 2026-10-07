@@ -1,4 +1,5 @@
-import 'dotenv/config';
+// Lo primero: carga los ficheros de entorno antes de que config.ts lea process.env.
+import { loadedEnvFiles } from './load-env';
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
@@ -14,7 +15,16 @@ async function bootstrap() {
   app.enableShutdownHooks();
 
   await app.listen(config.PORT);
-  logger.info({ port: config.PORT, content: config.CONTENT_DIR }, 'app-messages-server arrancado');
+  logger.info(
+    {
+      port: config.PORT,
+      content: config.CONTENT_DIR,
+      APP_ENV: process.env.APP_ENV || '-',
+      files: loadedEnvFiles.map((f) => f.split('/').pop()),
+      reload: config.RELOAD_TOKEN ? 'on' : 'off',
+    },
+    'app-messages-server arrancado',
+  );
 }
 
 bootstrap().catch((err) => {

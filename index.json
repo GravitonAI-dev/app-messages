@@ -6,7 +6,9 @@
     "subscription_expired": "messages/subscription_expired.json",
     "plan_expired": "messages/plan_expired.json",
     "payment_failed": "messages/payment_failed.json",
+    "no_plan": "messages/no_plan.json",
     "quota_exhausted": "messages/quota_exhausted.json",
+    "trial_quota_exhausted": "messages/trial_quota_exhausted.json",
     "purchase_success": "messages/purchase_success.json",
     "trial_ending_soon": "messages/trial_ending_soon.json"
   },

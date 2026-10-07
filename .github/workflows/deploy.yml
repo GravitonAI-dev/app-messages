@@ -2,7 +2,7 @@
 # imagen en GHCR y la levanta en el VPS. El contenido va dentro de la imagen.
 #
 # Secrets: VPS_HOST, VPS_USER, VPS_SSH_KEY y VPS_APP_DIR (carpeta del VPS con
-# server/docker-compose.yml y su .env). El VPS tiene que poder hacer pull de
+# server/compose.yaml, o el docker-compose.yml de antes, y su .env). El VPS tiene que poder hacer pull de
 # ghcr.io/gravitonai-dev/app-messages (docker login ghcr.io con un token de lectura).
 name: deploy
 

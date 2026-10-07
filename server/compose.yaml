@@ -1,0 +1,21 @@
+# Production server (the VPS): `docker compose pull && docker compose up -d`
+# (CI publishes the image; see .github/workflows/deploy.yml). Variables: .env
+# and/or .env.prod; when both exist, .env wins (env_file: the last file wins).
+# Locally, compiled: `make up-local` (compose.prod.local.yaml, .env.prod.local).
+services:
+  app-messages:
+    image: ghcr.io/gravitonai-dev/app-messages:${IMAGE_TAG:-latest}
+    build:
+      context: ..
+      dockerfile: server/Dockerfile
+    env_file:
+      - path: .env.prod
+        required: false
+      - path: .env
+        required: false
+    environment:
+      PORT: 3000
+    ports:
+      # Sólo para el proxy inverso del VPS, que pone el TLS y el dominio.
+      - "127.0.0.1:${HOST_PORT:-3000}:3000"
+    restart: unless-stopped

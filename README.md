@@ -165,7 +165,7 @@ Para cada código, qué mensaje sale, en qué orden y si bloquea. Los códigos, 
 | `X.*` | Comodín: cualquier motivo de esa situación. Gana la clave exacta |
 | `fallback` | Qué hacer con un código desconocido: `null` = nada |
 
-Hoy cubre el plan caducado por fecha, el trial a punto de acabar y la suscripción impagada. La cuota (`QUOTA_EXHAUSTED.*`) llegará con la ventana de tokens. Cancelar una suscripción no tiene código propio: el plan sigue hasta su fecha (ver `docs/codigos-de-estado.md`, «Cancelación»).
+Hoy cubre el plan caducado por fecha, la cuota agotada, el trial a punto de acabar y la suscripción impagada. Cancelar una suscripción no tiene código propio: el plan sigue hasta su fecha (ver `docs/codigos-de-estado.md`, «Cancelación»).
 
 ## HTML admitido
 
@@ -225,8 +225,19 @@ En local:
 ```
 cd server && pnpm install && pnpm test
 pnpm start:dev                                  # http://localhost:3000, contenido de ..
-docker compose up --build                       # igual, en contenedor (necesita server/.env)
+cp .env.prod.local.example .env.prod.local      # una vez
+make up-local                                   # en contenedor, http://127.0.0.1:3042, contenido de este clon montado
+make reload-local                               # tras editar un mensaje: lo vuelve a leer sin reiniciar
 ```
+
+Ficheros de entorno (`server/src/load-env.ts`, la misma regla que el resto de servicios), de mayor a menor prioridad: las variables del proceso o del contenedor, `.env.<APP_ENV>` (el perfil elegido, p. ej. `APP_ENV=prod.local`), `.env` (el del servidor) y `.env.prod`. Las plantillas (`*.example`) se versionan; los reales, no.
+
+| | Producción (`compose.yaml`) | Local (`compose.prod.local.yaml`, `make up-local`) |
+|---|---|---|
+| Imagen | `ghcr.io/gravitonai-dev/app-messages` (la publica la CI) | `app-messages:local`, compilada aquí |
+| Contenido | El que va dentro de la imagen | Este clon, montado en solo lectura |
+| Variables | `.env` (y `.env.prod` por debajo) | Solo `.env.prod.local` |
+| Puerto | `127.0.0.1:${HOST_PORT}` (el proxy inverso) | `127.0.0.1:3042` |
 
 Despliegue: `.github/workflows/deploy.yml` valida, publica `ghcr.io/gravitonai-dev/app-messages` y hace `docker compose pull && up -d` en el VPS por SSH. La configuración está en `server/.env.example`.
 
@@ -257,6 +268,8 @@ node scripts/test-fixtures.mjs
 | `subscription_expired` | `PLAN_EXPIRED.DAYS_LIMIT_REACHED` con otro plan | AppDialog, blur, persistente, sin X; mismo diseño que `trial_expired` | brand |
 | `plan_expired` | `GATEWAY.INSUFFICIENT_CAPABILITY.max_days`, hasta que telemetría confirma el plan | AppDialog, blur, persistente, sin X | danger |
 | `payment_failed` | `PLAN_REVOKED`: suscripción impagada (Stripe la terminó) sin otro plan ni trial en vigor | AppDialog, blur, persistente, sin X; «Ya lo he pagado» y «Revisar el pago» | danger |
+| `no_plan` | `NO_PLAN`: la cuenta no tiene ningún plan (p. ej. volvió a registrarse con el correo de una cuenta borrada, sin trial) | AppDialog, blur, persistente, sin X; mismo diseño que `trial_expired`, con «Volver a comprobar» y «Activar {{plan.basic_plan.name}}» | danger |
 | `trial_ending_soon` | `PLAN_EXPIRING_SOON` con `plan_code: free_plan` | AppBanner abajo a la derecha, con X, se cierra a los 10 s | info |
-| `quota_exhausted` | Ninguno todavía: llegará con la ventana de tokens | AppDialog abajo centrado, encima del cuadro de entrada del chat; sin blur, con X | danger |
+| `quota_exhausted` | `QUOTA_EXHAUSTED.*` (telemetría), `GATEWAY.USAGE_LIMIT_EXCEEDED.*` y `GATEWAY.TOKEN_LIMIT_EXCEEDED` (rechazo del chat) con un plan de pago: «Se renueva…» (ventanas de uso) | AppDialog abajo centrado, encima del cuadro de entrada del chat; sin blur, con X | danger |
+| `trial_quota_exhausted` | Los mismos códigos con `plan_code: free_plan`: la cuota del trial no se renueva, sólo «Activar {{plan.basic_plan.name}}» | AppDialog abajo centrado, encima del cuadro de entrada del chat; sin blur, con X | danger |
 | `purchase_success` | Ninguno todavía (`PLAN_STARTED`, pendiente) | AppDialog, blur, con X, una sola vez | success |
