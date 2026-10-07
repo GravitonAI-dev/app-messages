@@ -1,0 +1,10 @@
+{
+  "description": "Trial sin cuota con días por delante: aviso abajo, sin renovación (sólo activando un plan); la app sigue funcionando",
+  "codes": [
+    {
+      "code": "QUOTA_EXHAUSTED.INPUT_TOKENS_LIMIT_REACHED",
+      "params": { "plan_code": "free_plan", "used": 500000, "limit": 500000, "usage_percentage": 100, "since": "2026-10-02T13:03:34.478Z", "resets_at": null }
+    }
+  ],
+  "expected": { "block": false, "visible_now": ["trial_quota_exhausted"], "queue": ["trial_quota_exhausted"] }
+}

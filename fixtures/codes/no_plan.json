@@ -1,0 +1,18 @@
+{
+  "description": "Cuenta sin ningún plan (volvió a registrarse con el correo de una cuenta borrada y no recibe trial): muro para elegir plan",
+  "codes": [
+    {
+      "code": "NO_PLAN",
+      "params": {}
+    }
+  ],
+  "expected": {
+    "block": true,
+    "visible_now": [
+      "no_plan"
+    ],
+    "queue": [
+      "no_plan"
+    ]
+  }
+}
