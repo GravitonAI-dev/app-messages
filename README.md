@@ -260,22 +260,20 @@ Antes de nada corre `validate`, que construye `--target test` de `server/Dockerf
 
 Por qué el contenido va en un volumen y no en la imagen: editar un mensaje es lo que más se hace, y no debería costar reconstruir una imagen ni cortar el servicio. `reload()` relee y valida todo (índice, catálogo, cada mensaje y su HTML) antes de sustituir nada, así que un JSON roto falla el despliegue y deja el contenido anterior sirviéndose.
 
-Lo que se sirve es un **clon del repo en el VPS**, en `VPS_APP_DIR/repo`, que el despliegue deja en el commit desplegado. Así se puede entrar y ver exactamente qué contenido está servido:
+Lo que se sirve es el **clon del repo que ya hay en el VPS**: `VPS_APP_DIR` es su `server/`, y la raíz del clon se monta en `/content`. El despliegue lo deja en el commit desplegado, así que se puede entrar y ver exactamente qué contenido está servido:
 
 ```
-git -C repo rev-parse --short HEAD     # el commit que se está sirviendo
+git rev-parse --short HEAD             # el commit que se está sirviendo
 curl -s localhost:3000/health          # content_version, el hash de lo cargado
 ```
+
+Como `server/compose.yaml` está versionado, un cambio suyo llega con ese mismo reset: nunca hay que copiar ficheros al VPS a mano.
 
 El clon se pone al día con `fetch` + `reset --hard <sha>` + `clean -fd`, no con `pull`: queda igual que el commit aunque alguien haya tocado algo a mano en el VPS, y un fichero borrado del repo desaparece también allí. Se escribe dentro del directorio montado y nunca se sustituye por otro, porque un bind mount sigue al inode y un `mv` dejaría al contenedor mirando el directorio viejo.
 
 Del clon se monta todo, pero sólo se publica el contenido: `/raw/server/…`, `/raw/scripts/…` y `/raw/.git/…` devuelven 404, porque `/raw` sirve únicamente las rutas de `PUBLISHED` (`fs-content-store.adapter.ts`).
 
-El VPS necesita:
-
-- **docker, ssh y git**;
-- una **deploy key de sólo lectura** del repo instalada para `VPS_USER` (el clon usa `git@github.com:GravitonAI-dev/app-messages.git`);
-- en `VPS_APP_DIR`: `compose.yaml` y su `.env` (con `RELOAD_TOKEN`; ver `server/.env.example`). El clon `repo/` lo crea el propio despliegue la primera vez.
+El VPS necesita **docker, ssh y git con credenciales de lectura del repo**, el clon, y en `VPS_APP_DIR` (= `<clon>/server`) su `.env` con `RELOAD_TOKEN` (ver `server/.env.example`). El `.env` no se versiona y sobrevive al despliegue: está en `.gitignore`, y `git clean -fd` no borra lo ignorado.
 
 Secrets del repo: `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`, `VPS_APP_DIR` y `VPS_RELOAD_TOKEN` (el mismo `RELOAD_TOKEN` del `.env` del VPS).
 

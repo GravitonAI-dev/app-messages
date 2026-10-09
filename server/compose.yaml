@@ -24,11 +24,12 @@ services:
       PORT: 3000
       CONTENT_DIR: /content
     volumes:
-      # El clon que mantiene el deploy en el commit desplegado. De sólo
+      # La raíz del clon del VPS, que el deploy mantiene en el commit
+      # desplegado (y que es el directorio de encima de éste). De sólo
       # lectura: el servicio nunca escribe contenido. Lo que sobra del clon
       # (server/, scripts/, .git) se monta pero no se sirve: /raw sólo publica
       # las rutas de PUBLISHED (fs-content-store.adapter.ts).
-      - ${CONTENT_DIR_HOST:-./repo}:/content:ro
+      - ${CONTENT_DIR_HOST:-..}:/content:ro
     ports:
       # Sólo para el proxy inverso del VPS, que pone el TLS y el dominio.
       - "127.0.0.1:${HOST_PORT:-3000}:3000"
