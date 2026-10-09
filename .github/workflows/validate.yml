@@ -1,3 +1,7 @@
+# Valida el contenido y el servicio dentro del contenedor (`--target test` de
+# server/Dockerfile), con la misma toolchain con la que se publica la imagen.
+# El runner sólo necesita docker: ni node ni pnpm, para que una versión que
+# cambie en ubuntu-latest no pueda tumbar un despliegue.
 name: validate
 
 on:
@@ -11,19 +15,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
         with:
-          node-version: 22
-      - run: node scripts/validate.mjs
-      - run: node scripts/test-fixtures.mjs
-      - run: corepack enable
-      # Desde server/, no desde la raíz: corepack elige la versión de pnpm
-      # leyendo el package.json del directorio actual, y la raíz no declara
-      # `packageManager`. Desde ahí bajaría la última publicada (pnpm 12) y
-      # luego moriría al entrar en server/, que pide la 10.32.1, porque bajo
-      # corepack pnpm no se cambia de versión a sí mismo. Es lo que ya hace
-      # server/Dockerfile.
-      - run: pnpm install --frozen-lockfile
-        working-directory: server
-      - run: pnpm test
-        working-directory: server
+          context: .
+          file: server/Dockerfile
+          target: test
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
