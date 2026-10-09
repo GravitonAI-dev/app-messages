@@ -2,6 +2,13 @@
 # (CI publishes the image; see .github/workflows/deploy.yml). Variables: .env
 # and/or .env.prod; when both exist, .env wins (env_file: the last file wins).
 # Locally, compiled: `make up-local` (compose.prod.local.yaml, .env.prod.local).
+#
+# El contenido (index.json, codes.json, messages/, home/, assets/, preview/,
+# templates/) NO se sirve desde la imagen, sino del clon del repo montado en
+# /content: así publicar un mensaje es un `git reset --hard` al commit nuevo
+# y una llamada a /internal/reload, sin reconstruir la imagen ni reiniciar el
+# servicio. La imagen conserva su copia como respaldo: si se levanta sin este
+# volumen, arranca con el contenido con el que se construyó.
 services:
   app-messages:
     image: ghcr.io/gravitonai-dev/app-messages:${IMAGE_TAG:-latest}
@@ -15,6 +22,14 @@ services:
         required: false
     environment:
       PORT: 3000
+      CONTENT_DIR: /content
+    volumes:
+      # La raíz del clon del VPS, que el deploy mantiene en el commit
+      # desplegado (y que es el directorio de encima de éste). De sólo
+      # lectura: el servicio nunca escribe contenido. Lo que sobra del clon
+      # (server/, scripts/, .git) se monta pero no se sirve: /raw sólo publica
+      # las rutas de PUBLISHED (fs-content-store.adapter.ts).
+      - ${CONTENT_DIR_HOST:-..}:/content:ro
     ports:
       # Sólo para el proxy inverso del VPS, que pone el TLS y el dominio.
       - "127.0.0.1:${HOST_PORT:-3000}:3000"

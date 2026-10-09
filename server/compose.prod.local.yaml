@@ -23,6 +23,8 @@ services:
     environment:
       APP_ENV: prod.local
       CONTENT_DIR: /content
-    volumes:
+    # !override: si no, Compose sumaría este montaje al de compose.yaml y
+    # habría dos cosas distintas en /content.
+    volumes: !override
       - ..:/content:ro
     restart: "no"

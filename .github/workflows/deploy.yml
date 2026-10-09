@@ -1,9 +1,25 @@
-# Cada push a main (un mensaje nuevo o un cambio en el servicio) publica la
-# imagen en GHCR y la levanta en el VPS. El contenido va dentro de la imagen.
+# Cada push a main publica el contenido en el VPS. Qué se hace depende de lo
+# que cambie:
 #
-# Secrets: VPS_HOST, VPS_USER, VPS_SSH_KEY y VPS_APP_DIR (carpeta del VPS con
-# server/compose.yaml, o el docker-compose.yml de antes, y su .env). El VPS tiene que poder hacer pull de
-# ghcr.io/gravitonai-dev/app-messages (docker login ghcr.io con un token de lectura).
+#   sólo contenido (mensajes, portada, codes.json, assets…)
+#       -> se sincroniza y se llama a /internal/reload: en caliente, sin
+#          reconstruir la imagen y sin cortar el servicio.
+#   algo de server/ (código del servicio, Dockerfile, el propio workflow)
+#       -> imagen nueva en GHCR y `up -d`, con su corte breve. El contenido
+#          se sincroniza igual antes de levantar.
+#
+# El contenido que se sirve es el clon del repo que ya hay en el VPS, puesto en
+# el commit que se despliega: así se puede entrar y ver exactamente qué hay
+# servido (`git rev-parse HEAD`) y hacer un pull a mano si hace falta. Como
+# compose.yaml está versionado, también llega con ese mismo reset: no hay que
+# copiar nada al VPS.
+#
+# El VPS necesita docker, ssh y git con credenciales de lectura del repo,
+# además de poder hacer pull de ghcr.io/gravitonai-dev/app-messages.
+#
+# Secrets: VPS_HOST, VPS_USER, VPS_SSH_KEY, VPS_APP_DIR (el server/ del clon
+# del VPS: donde están compose.yaml y su .env) y VPS_RELOAD_TOKEN (el
+# RELOAD_TOKEN de ese .env).
 name: deploy
 
 on:
@@ -19,8 +35,40 @@ jobs:
   validate:
     uses: ./.github/workflows/validate.yml
 
+  # ¿Hay que reconstruir la imagen, o basta con recargar el contenido?
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      server: ${{ steps.filter.outputs.server }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: filter
+        env:
+          BEFORE: ${{ github.event.before }}
+          SHA: ${{ github.sha }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          # A mano, o sin base con la que comparar (rama nueva): se reconstruye.
+          if [ "$EVENT" != "push" ] || [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ] \
+             || ! git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            echo "server=true" >> "$GITHUB_OUTPUT"
+            echo "Sin base para comparar: se reconstruye la imagen."
+            exit 0
+          fi
+          if git diff --name-only "$BEFORE" "$SHA" | grep -qE '^(server/|\.github/workflows/|\.dockerignore$)'; then
+            echo "server=true" >> "$GITHUB_OUTPUT"
+            echo "Cambia el servicio: imagen nueva."
+          else
+            echo "server=false" >> "$GITHUB_OUTPUT"
+            echo "Sólo contenido: recarga en caliente."
+          fi
+
   image:
-    needs: validate
+    needs: [validate, changes]
+    if: needs.changes.outputs.server == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -45,20 +93,61 @@ jobs:
           cache-to: type=gha,mode=max
 
   deploy:
-    needs: image
+    needs: [validate, changes, image]
+    # `image` se salta cuando sólo cambia contenido; always() + el guard de
+    # abajo evita que eso cancele el deploy.
+    if: always() && needs.validate.result == 'success' && needs.changes.result == 'success' && needs.image.result != 'failure'
     runs-on: ubuntu-latest
     environment: production
+    env:
+      REBUILD: ${{ needs.changes.outputs.server }}
+      SHA: ${{ github.sha }}
     steps:
       - uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          envs: REBUILD,SHA
           script: |
-            set -e
+            set -eu
             cd "${{ secrets.VPS_APP_DIR }}"
-            IMAGE_TAG=${{ github.sha }} docker compose pull app-messages
-            IMAGE_TAG=${{ github.sha }} docker compose up -d --no-build app-messages
+
+            # El clon del VPS es lo que se sirve: su raíz se monta en /content.
+            # VPS_APP_DIR está dentro de ese clon (es su server/), así que la
+            # raíz se deduce y no hay que configurar ninguna ruta. Se escribe
+            # DENTRO del directorio montado, nunca se sustituye por otro: un
+            # bind mount sigue al inode, y un `mv` dejaría al contenedor
+            # mirando el directorio viejo.
+            REPO=$(git rev-parse --show-toplevel)
+            git -C "$REPO" fetch --prune origin main
+            # reset --hard + clean, no `pull`: el clon queda igual que el commit
+            # desplegado aunque alguien haya tocado algo a mano en el VPS, y un
+            # fichero borrado del repo desaparece también aquí. El .env no se
+            # toca: está en .gitignore y `clean -fd` no borra lo ignorado.
+            git -C "$REPO" reset --hard "$SHA"
+            git -C "$REPO" clean -fd
+            echo "contenido en $REPO, commit $(git -C "$REPO" rev-parse --short HEAD)"
+
+            # Con el reset ya está aquí el compose.yaml de este commit: no hay
+            # que copiar nada al VPS a mano.
+            export CONTENT_DIR_HOST="$REPO"
+
+            # Mientras se escribía, el servicio seguía sirviendo su copia en
+            # memoria: no lee el disco hasta el reload de abajo.
+            if [ "$REBUILD" = "true" ]; then
+              IMAGE_TAG=${{ github.sha }} docker compose pull app-messages
+              IMAGE_TAG=${{ github.sha }} docker compose up -d --no-build app-messages
+            else
+              # reload() valida todo (index, catálogo, cada mensaje y su HTML)
+              # antes de sustituir nada: si algo está roto falla aquí y el
+              # servicio sigue sirviendo lo anterior.
+              docker compose exec -T app-messages \
+                wget -qO- --post-data='' --header="x-reload-token: ${{ secrets.VPS_RELOAD_TOKEN }}" \
+                http://127.0.0.1:3000/internal/reload
+              echo
+            fi
+
             for i in $(seq 1 30); do
               docker compose exec -T app-messages wget -qO- http://127.0.0.1:3000/health && exit 0
               sleep 2
