@@ -8,12 +8,17 @@
 #       -> imagen nueva en GHCR y `up -d`, con su corte breve. El contenido
 #          se sincroniza igual antes de levantar.
 #
-# El VPS sólo necesita docker y ssh: el contenido se extrae dentro de un
-# contenedor, así que no hacen falta ni rsync, ni tar, ni git, ni node.
+# El contenido que se sirve es un clon del repo en el VPS, puesto en el commit
+# que se despliega: así se puede entrar y ver exactamente qué hay servido
+# (`git -C repo rev-parse HEAD`) y hacer un pull a mano si hace falta.
+#
+# El VPS necesita docker, ssh y git, y una deploy key de SÓLO LECTURA del repo
+# instalada para VPS_USER (el clon usa git@github.com:…), además de poder
+# hacer pull de ghcr.io/gravitonai-dev/app-messages.
 #
 # Secrets: VPS_HOST, VPS_USER, VPS_SSH_KEY, VPS_APP_DIR (carpeta del VPS con
 # server/compose.yaml y su .env) y VPS_RELOAD_TOKEN (el RELOAD_TOKEN de ese
-# .env). El VPS tiene que poder hacer pull de ghcr.io/gravitonai-dev/app-messages.
+# .env).
 name: deploy
 
 on:
@@ -95,47 +100,32 @@ jobs:
     environment: production
     env:
       REBUILD: ${{ needs.changes.outputs.server }}
+      SHA: ${{ github.sha }}
     steps:
-      - uses: actions/checkout@v4
-
-      # Lo que se publica, y sólo eso: lo mismo que PUBLISHED en
-      # server/src/infrastructure/adapters/fs-content-store.adapter.ts.
-      - name: Empaquetar el contenido
-        run: tar czf content.tar.gz index.json codes.json messages home assets preview templates
-
-      - uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          source: content.tar.gz
-          target: ${{ secrets.VPS_APP_DIR }}
-
       - uses: appleboy/ssh-action@v1
-        env:
-          RELOAD_TOKEN: ${{ secrets.VPS_RELOAD_TOKEN }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          envs: REBUILD,RELOAD_TOKEN
+          envs: REBUILD,SHA
           script: |
             set -eu
             cd "${{ secrets.VPS_APP_DIR }}"
-            IMAGE=ghcr.io/gravitonai-dev/app-messages:${{ github.sha }}
 
-            # El contenido se escribe DENTRO del directorio montado: sustituirlo
-            # con mv dejaría al contenedor mirando el directorio viejo, porque
-            # el bind mount sigue al inode. Se extrae desde un contenedor para
-            # no necesitar tar en el VPS, y se vacía antes para que un mensaje
-            # borrado en el repo desaparezca también aquí.
-            mkdir -p content
-            docker run --rm \
-              -v "$PWD/content:/content" \
-              -v "$PWD/content.tar.gz:/in/content.tar.gz:ro" \
-              --entrypoint sh "$IMAGE" -c \
-              'rm -rf /content/..?* /content/.[!.]* /content/* 2>/dev/null || true; tar xzf /in/content.tar.gz -C /content'
-            rm -f content.tar.gz
+            # El clon es lo que se sirve: se monta en /content (CONTENT_DIR_HOST).
+            # Se escribe DENTRO del directorio montado, nunca se sustituye por
+            # otro: un bind mount sigue al inode, así que un `mv` dejaría al
+            # contenedor mirando el directorio viejo.
+            if [ ! -d repo/.git ]; then
+              git clone --branch main git@github.com:GravitonAI-dev/app-messages.git repo
+            fi
+            git -C repo fetch --prune origin main
+            # reset --hard + clean, no `pull`: el clon queda igual que el commit
+            # desplegado aunque alguien haya tocado algo a mano en el VPS, y un
+            # fichero borrado del repo desaparece también aquí.
+            git -C repo reset --hard "$SHA"
+            git -C repo clean -fd
+            echo "contenido en $(git -C repo rev-parse --short HEAD)"
 
             # Mientras se escribía, el servicio seguía sirviendo su copia en
             # memoria: no lee el disco hasta el reload de abajo.
@@ -147,7 +137,7 @@ jobs:
               # antes de sustituir nada: si algo está roto falla aquí y el
               # servicio sigue sirviendo lo anterior.
               docker compose exec -T app-messages \
-                wget -qO- --post-data='' --header="x-reload-token: $RELOAD_TOKEN" \
+                wget -qO- --post-data='' --header="x-reload-token: ${{ secrets.VPS_RELOAD_TOKEN }}" \
                 http://127.0.0.1:3000/internal/reload
               echo
             fi

@@ -243,7 +243,7 @@ Ficheros de entorno (`server/src/load-env.ts`, la misma regla que el resto de se
 | | Producción (`compose.yaml`) | Local (`compose.prod.local.yaml`, `make up-local`) |
 |---|---|---|
 | Imagen | `ghcr.io/gravitonai-dev/app-messages` (la publica la CI) | `app-messages:local`, compilada aquí |
-| Contenido | El del directorio montado en `/content`; el de la imagen queda de respaldo | Este clon, montado en solo lectura |
+| Contenido | El clon del VPS, montado en `/content`; el de la imagen queda de respaldo | Este clon, montado en solo lectura |
 | Variables | `.env` (y `.env.prod` por debajo) | Solo `.env.prod.local` |
 | Puerto | `127.0.0.1:${HOST_PORT}` (el proxy inverso) | `127.0.0.1:3042` |
 
@@ -253,16 +253,29 @@ Todo lo arranca un push a `main`, y lo que se hace depende de qué cambie:
 
 | Cambia | Qué hace `deploy.yml` | Corte |
 |---|---|---|
-| Sólo contenido (`messages/`, `home/`, `codes.json`, `assets/`, `templates/`…) | Sincroniza el contenido al VPS y llama a `POST /internal/reload` | Ninguno: el servicio no se reinicia |
-| Algo de `server/` (código, `Dockerfile`) o el propio workflow | Publica la imagen en GHCR y hace `docker compose pull && up -d` | El del reinicio |
+| Sólo contenido (`messages/`, `home/`, `codes.json`, `assets/`, `templates/`…) | Pone el clon del VPS en el commit nuevo y llama a `POST /internal/reload` | Ninguno: el servicio no se reinicia |
+| Algo de `server/` (código, `Dockerfile`) o el propio workflow | Actualiza el clon igual, publica la imagen en GHCR y hace `docker compose pull && up -d` | El del reinicio |
 
 Antes de nada corre `validate`, que construye `--target test` de `server/Dockerfile`: contenido, fixtures y tests del servicio dentro del contenedor, con la misma toolchain con la que se publica.
 
 Por qué el contenido va en un volumen y no en la imagen: editar un mensaje es lo que más se hace, y no debería costar reconstruir una imagen ni cortar el servicio. `reload()` relee y valida todo (índice, catálogo, cada mensaje y su HTML) antes de sustituir nada, así que un JSON roto falla el despliegue y deja el contenido anterior sirviéndose.
 
-En el VPS sólo hacen falta **docker y ssh**: el contenido viaja como `tar` por `scp` y se extrae dentro de un contenedor, sin necesitar `rsync`, `tar`, `git` ni `node` en la máquina. Se escribe dentro del directorio montado (un bind mount sigue al inode: sustituir el directorio con `mv` dejaría al contenedor mirando el viejo) y se vacía antes de extraer, para que un mensaje borrado del repo desaparezca también allí.
+Lo que se sirve es un **clon del repo en el VPS**, en `VPS_APP_DIR/repo`, que el despliegue deja en el commit desplegado. Así se puede entrar y ver exactamente qué contenido está servido:
 
-Lo que el VPS necesita tener, en `VPS_APP_DIR`: `compose.yaml`, su `.env` (con `RELOAD_TOKEN`; ver `server/.env.example`) y el directorio `content/`, que crea y llena el propio despliegue.
+```
+git -C repo rev-parse --short HEAD     # el commit que se está sirviendo
+curl -s localhost:3000/health          # content_version, el hash de lo cargado
+```
+
+El clon se pone al día con `fetch` + `reset --hard <sha>` + `clean -fd`, no con `pull`: queda igual que el commit aunque alguien haya tocado algo a mano en el VPS, y un fichero borrado del repo desaparece también allí. Se escribe dentro del directorio montado y nunca se sustituye por otro, porque un bind mount sigue al inode y un `mv` dejaría al contenedor mirando el directorio viejo.
+
+Del clon se monta todo, pero sólo se publica el contenido: `/raw/server/…`, `/raw/scripts/…` y `/raw/.git/…` devuelven 404, porque `/raw` sirve únicamente las rutas de `PUBLISHED` (`fs-content-store.adapter.ts`).
+
+El VPS necesita:
+
+- **docker, ssh y git**;
+- una **deploy key de sólo lectura** del repo instalada para `VPS_USER` (el clon usa `git@github.com:GravitonAI-dev/app-messages.git`);
+- en `VPS_APP_DIR`: `compose.yaml` y su `.env` (con `RELOAD_TOKEN`; ver `server/.env.example`). El clon `repo/` lo crea el propio despliegue la primera vez.
 
 Secrets del repo: `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`, `VPS_APP_DIR` y `VPS_RELOAD_TOKEN` (el mismo `RELOAD_TOKEN` del `.env` del VPS).
 
