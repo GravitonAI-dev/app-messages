@@ -244,12 +244,17 @@ function render() {
         ${block(b, `${id}.blocks.${i}`)}</div>`;
     const top = doc.blocks.map((b, i) => footer(b) ? '' : html(b, i)).join('');
     const bottom = doc.blocks.map((b, i) => footer(b) ? html(b, i) : '').join('');
-    col.classList.toggle('off-col', doc.enabled === false);
-    col.classList.toggle('dim', RO && !!FOCUS && id !== FOCUS);
+    const focused = RO && FOCUS === id;
+    // Apagado se pinta atenuado, salvo si es el que se está mirando: entonces
+    // a plena vista (que está apagado lo dice la barra de la vista previa).
+    col.classList.toggle('off-col', doc.enabled === false && !focused);
+    col.classList.toggle('dim', RO && !!FOCUS && !focused);
     const colhd = RO ? '' : `<div class="colhd">${id === 'portada_centro' ? 'Columna central' : 'Panel derecho'} · <label><input type="checkbox" data-op="col" data-c="${id}" ${doc.enabled !== false ? 'checked' : ''}> visible</label><select data-op="add" data-c="${id}"><option value="">+ bloque</option>${Object.entries(NAMES).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></div>`;
     col.innerHTML = `${colhd}${top}<div class="grow"></div>${bottom}`;
   }
-  $('#app').classList.toggle('noaside', docs.portada_derecha?.enabled === false);
+  // El panel apagado no ocupa sitio, como en la app; pero si es el que se está
+  // mirando en la vista previa, se le deja su hueco para poder verlo.
+  $('#app').classList.toggle('noaside', docs.portada_derecha?.enabled === false && !(RO && FOCUS === 'portada_derecha'));
   window.lucide?.createIcons({ attrs: { 'stroke-width': 1.5 } });
 }
 

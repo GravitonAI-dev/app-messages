@@ -104,7 +104,10 @@ let lang = new URLSearchParams(location.search).get('lang') === 'en' ? 'en' : 'e
 let VARS = VARS_BY_LANG[lang];
 // Un texto del mensaje: una cadena o uno por idioma (si falta el idioma, "es").
 const pick = (v) => (v && typeof v === 'object' ? (v[lang] ?? v.es) : v);
-const subst = (t) => String(pick(t)).replace(/\{\{\s*([a-zA-Z_.]+)\s*\}\}/g, (_, k) => VARS[k] ?? '');
+// La misma forma que VARIABLE_RE de scripts/core/contract.mjs: el nombre
+// admite dígitos, que es lo que hace falta para {{plan.plan_01.name}}.
+const VAR_RE = () => /\{\{\s*([a-zA-Z_][a-zA-Z0-9_.]*)\s*\}\}/g;
+const subst = (t) => String(pick(t)).replace(VAR_RE(), (_, k) => VARS[k] ?? '');
 const q = new URLSearchParams(location.search);
 let theme = q.get('theme') === 'dark' ? 'dark' : 'light';
 let current = null;
@@ -130,7 +133,7 @@ async function load(id) {
   VARS.plan_name = via.some((v) => v.includes('(plan_00)')) ? 'Trial' : 'Confidential';
   let html = pick(m.html) ?? await (await fetch('../messages/' + pick(m.html_file))).text();
   const t = THEMES[theme];
-  html = html.replace(/\{\{\s*([a-zA-Z_.]+)\s*\}\}/g, (_, k) => k.startsWith('c.') ? (t[k.slice(2)] ?? 'magenta') : (VARS[k] ?? ''))
+  html = html.replace(VAR_RE(), (_, k) => k.startsWith('c.') ? (t[k.slice(2)] ?? 'magenta') : (VARS[k] ?? ''))
              .replaceAll('https://raw.githubusercontent.com/GravitonAI-dev/app-messages/main/', '../');
   const card = document.getElementById('card');
   card.className = 'card ' + m.position + ' ' + (typeof m.size === 'number' ? '' : m.size);
