@@ -17,5 +17,13 @@ jobs:
       - run: node scripts/validate.mjs
       - run: node scripts/test-fixtures.mjs
       - run: corepack enable
-      - run: pnpm -C server install --frozen-lockfile
-      - run: pnpm -C server test
+      # Desde server/, no desde la raíz: corepack elige la versión de pnpm
+      # leyendo el package.json del directorio actual, y la raíz no declara
+      # `packageManager`. Desde ahí bajaría la última publicada (pnpm 12) y
+      # luego moriría al entrar en server/, que pide la 10.32.1, porque bajo
+      # corepack pnpm no se cambia de versión a sí mismo. Es lo que ya hace
+      # server/Dockerfile.
+      - run: pnpm install --frozen-lockfile
+        working-directory: server
+      - run: pnpm test
+        working-directory: server
