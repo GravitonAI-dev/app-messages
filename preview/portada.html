@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Editor de portada</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<style>
+  /* Editor de la pantalla de inicio de la app ConfAI. Pinta home/portada_centro.json y
+     home/portada_derecha.json con las medidas de la app (ventana 1240×700, menú 248,
+     panel 380, tokens de AppTypography/AppSpacing) y deja editar encima. Se abre con
+     `node scripts/portada-editor.mjs` (Guardar escribe el JSON; Publicar lo sube a GitHub). */
+  html,body{margin:0;height:100%;font-family:'Open Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  body{background:#2b2b30;color:var(--textPrimary)}
+  *{box-sizing:border-box}
+  .toolbar{position:fixed;top:0;left:0;right:0;height:48px;z-index:20;display:flex;gap:10px;align-items:center;padding:0 14px;background:#1e1e22;color:#e6e6ea;font-size:12.5px}
+  .toolbar b{font-weight:700;margin-right:6px}
+  .toolbar button,.toolbar select{background:#2d2d33;color:#e6e6ea;border:1px solid #44444c;border-radius:6px;padding:6px 10px;font:inherit;cursor:pointer}
+  .toolbar button.primary{background:#7D67C0;border-color:#7D67C0;color:#fff;font-weight:600}
+  .toolbar button:disabled{opacity:.45;cursor:default}
+  .toolbar .sp{flex:1}
+  #status{color:#a3a3ad;max-width:520px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #status.err{color:#F06A8B} #status.ok{color:#3FBE7E}
+  /* La ventana de la app, a su tamaño; se encoge entera si no cabe. */
+  .stage{position:absolute;inset:48px 0 0 0;display:flex;align-items:flex-start;justify-content:center;padding:24px;overflow:auto}
+  .win{width:1240px;height:700px;flex:none;border-radius:10px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.45);background:var(--surface);transform-origin:top center}
+  .titlebar{height:28px;display:flex;align-items:center;justify-content:center;position:relative;background:var(--titleBg);border-bottom:1px solid var(--border);font-size:13px;font-weight:600;color:var(--textPrimary)}
+  .titlebar i{position:absolute;left:12px;top:9px;display:flex;gap:8px}
+  .titlebar i b{width:12px;height:12px;border-radius:50%;background:#ff5f57}.titlebar i b+b{background:#febc2e}.titlebar i b+b+b{background:#28c840}
+  .app{height:672px;display:grid;grid-template-columns:248px 1fr 380px;overflow:hidden}
+  .app.noaside{grid-template-columns:248px 1fr 0}
+  .side{background:var(--sidebarBg);border-right:1px solid var(--border);padding:22px 16px}
+  .side div{height:10px;border-radius:5px;background:var(--sidebarLine);margin:0 0 18px}
+  .col{position:relative;overflow:auto;display:flex;flex-direction:column}
+  .center{padding:40px}
+  .aside{background:var(--surfaceMuted);border-left:1px solid var(--border);padding:24px}
+  .grow{flex:1;min-height:24px}
+  .off-col{opacity:.35}
+  /* controles del editor */
+  .blk{position:relative;border-radius:4px;outline:1px dashed transparent;outline-offset:4px}
+  .blk:hover{outline-color:var(--accentLine)}
+  .blk.hidden{opacity:.3}
+  .blk.hidden::before{content:'oculto';position:absolute;left:0;top:-15px;font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--textMuted)}
+  .ctl{position:absolute;right:-4px;top:-26px;display:none;gap:2px;background:var(--surfaceRaised);border:1px solid var(--border);border-radius:6px;padding:2px;box-shadow:0 2px 8px rgba(0,0,0,.1);z-index:5}
+  .blk:hover>.ctl{display:flex}
+  .ctl span{font-size:10px;color:var(--textMuted);padding:2px 5px;font-weight:600}
+  .ctl button{border:0;background:none;color:var(--textPrimary);font:600 11px 'Open Sans';padding:2px 6px;border-radius:4px;cursor:pointer}
+  .ctl button:hover{background:var(--accentSoft)}
+  [contenteditable]{outline:none;border-radius:3px;cursor:text}
+  [contenteditable]:hover{background:var(--accentSoft)}
+  [contenteditable]:focus{background:var(--accentSoft);box-shadow:0 0 0 1px var(--accentLine)}
+  [contenteditable]:empty::before{content:attr(data-ph);color:var(--textTertiary)}
+  .mini{border:1px dashed var(--accentLine);background:none;color:var(--brandPrimary);font:600 10.5px 'Open Sans';border-radius:4px;padding:1px 6px;cursor:pointer;margin:2px 4px 2px 0}
+  .add{margin-top:6px;display:flex}
+  .add select{background:transparent;color:var(--brandPrimary);border:1px dashed var(--accentLine);border-radius:6px;padding:3px 8px;font:600 11px 'Open Sans';cursor:pointer;opacity:.7}
+  .colhd{position:absolute;top:6px;right:10px;font-size:10px;color:var(--textTertiary);display:flex;gap:6px;align-items:center;z-index:3}
+  .colhd label{cursor:pointer;display:flex;gap:3px;align-items:center}
+  /* BrandMark (height 48): PNG 206×256, letra = cap del bocadillo */
+  .brand{display:flex;align-items:flex-start;height:48px}
+  .brand img{height:48px;width:38.6px}
+  .brand span{margin:11.7px 0 0 1.7px;font-size:19.7px;line-height:1;font-weight:700;letter-spacing:-.3px;color:var(--textMuted);white-space:nowrap} .brand span i{font-style:normal;color:var(--brandPrimary)}
+  /* AppSectionLabel strong = columnHeader 11/700/.9, mayúsculas */
+  .label{font-size:11px;line-height:1.3;font-weight:700;letter-spacing:.9px;text-transform:uppercase;color:var(--brandPrimary)}
+  /* AppSectionLabel normal = microLabel 9.5/600/.6 */
+  .nlabel{font-size:9.5px;line-height:1.4;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--textMuted);margin-bottom:8px}
+  .headline{font-size:38px;line-height:1.1;font-weight:700;letter-spacing:-.8px;color:var(--textPrimary);white-space:pre-line}
+  .ptitle{font-size:20px;line-height:1.2;font-weight:700;letter-spacing:-.3px;color:var(--textPrimary);margin:0 0 8px}
+  .prose{max-width:460px;font-size:12.5px;line-height:1.5;color:var(--textSecondary)}
+  /* Rejilla de dos columnas iguales (AppButton expand), 12 entre filas y columnas */
+  .actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;position:relative}
+  .actions>.mini{position:absolute;left:0;bottom:-22px}
+  /* AppButton hero: 44 de alto, 20 a los lados, columnHeader en mayúsculas */
+  .btn{display:flex;justify-content:center;align-items:center;gap:8px;height:44px;padding:0 20px;border-radius:6px;font-size:11px;font-weight:700;letter-spacing:.9px;text-transform:uppercase;border:1px solid transparent;position:relative}
+  .btn.primary{background:var(--brandPrimary);color:#fff;box-shadow:0 1px 2px rgba(125,103,192,.4)}
+  .btn.secondary{background:var(--surface);color:var(--brandPrimary);border-color:var(--accentLine)}
+  .btn .ic{font-size:14px;font-weight:400;width:13px;text-align:center}
+  .btn .opts{position:absolute;left:0;top:calc(100% + 4px);display:none;gap:4px;white-space:nowrap;z-index:4}
+  .btn:hover .opts,.btn:focus-within .opts{display:flex}
+  .btn small{font-size:9.5px;letter-spacing:0;text-transform:none;cursor:pointer;border:1px solid var(--accentLine);background:var(--surfaceRaised);color:var(--brandPrimary);border-radius:4px;padding:1px 5px;font-weight:600}
+  /* buildFeatureRow: raya arriba, 20 de aire, filas a 24, columnas con hairline y 16 por lado */
+  .features{border-top:1px solid var(--border);padding-top:20px;display:grid;row-gap:24px}
+  .feat{padding:0 16px;border-left:1px solid var(--border);position:relative}
+  .feat.first{padding-left:0;border-left:0}
+  .feat.last{padding-right:0}
+  .feat .n{font-size:11.5px;line-height:1.45;color:var(--brandPrimary);margin-bottom:8px}
+  .feat .t{font-size:12.5px;line-height:1.5;font-weight:600;color:var(--brandPrimary);margin-bottom:4px}
+  .feat .s{font-size:11.5px;line-height:1.45;color:var(--textSecondary)}
+  .feat .mini{position:absolute;right:4px;top:-4px;display:none}.feat:hover .mini{display:inline}
+  .featadd{grid-column:1/-1}
+  .legal{font-size:11.5px;line-height:1.45;color:var(--textMuted)}
+  .ntitle{font-size:20px;line-height:1.2;font-weight:700;letter-spacing:-.3px;color:var(--textPrimary)}
+  .intro{font-size:12.5px;line-height:1.5;color:var(--textSecondary);margin-top:8px}
+  /* AppAccordion: filas de 28 con title3, contador bodySmall, cuerpo con hairline a la izquierda */
+  .acc{margin-top:20px;border-top:1px solid var(--divider)}
+  .sec{border-bottom:1px solid var(--divider)}
+  .sec .hd{display:flex;align-items:center;gap:12px;min-height:28px;padding:4px 0;font-size:13px;line-height:1.4;font-weight:600;color:var(--textPrimary)}
+  .sec .tg{width:14px;color:var(--brandPrimary);font-size:17px;cursor:pointer;user-select:none;line-height:1;text-align:center;font-weight:400}
+  .sec .hd [contenteditable]{flex:1}
+  .sec .cnt{font-size:11.5px;color:var(--textTertiary);font-weight:400;white-space:nowrap}
+  .sec .hd .mini{display:none}.sec .hd:hover .mini{display:inline}
+  .sec ul{list-style:none;margin:0 0 12px 26px;padding:0}
+  .sec li{border-left:1px solid var(--border);padding:0 0 0 12px;margin-top:8px;font-size:11.5px;line-height:1.45;color:var(--textSecondary);display:flex;gap:4px;align-items:flex-start}
+  .sec li [contenteditable]{flex:1}
+  .sec li .mini{display:none}.sec li:hover .mini{display:inline}
+  /* AppBanner info: 12×8 de relleno, radio 6, hairline */
+  .banner{display:flex;gap:8px;align-items:flex-start;padding:8px 12px;border-radius:6px;border:1px solid var(--accentLine);background:var(--infoSurface);color:var(--brandPrimary);font-size:12.5px;font-weight:600;line-height:1.5}
+  .banner .ic{font-size:13px;line-height:19px}
+  .banner [contenteditable]{flex:1}
+  .lu,svg.lucide{display:inline-block;flex:none}
+  .btn svg.lucide{width:13px;height:13px}
+  .sec .tg svg.lucide{width:14px;height:14px}
+  .banner svg.lucide{width:16px;height:16px;margin-top:2px}
+  /* Los controles del editor no ocupan sitio: salen al pasar el ratón por su bloque. */
+  .mini{display:none}
+  .blk:hover .actions>.mini,.blk:hover .featadd .mini,.blk:hover>.mini,.sec:hover .addli .mini{display:inline}
+  .featadd,.addli{position:absolute}
+  .features{position:relative}.featadd{left:0;bottom:-22px}
+  .sec{position:relative}.addli{left:26px;bottom:-2px;border:0!important;padding:0!important}
+  .blk>.mini{position:absolute;left:0;bottom:-22px}
+  .colhd{opacity:0;transition:opacity .15s}.col:hover>.colhd{opacity:1}
+  .colhd select{background:var(--surface);color:var(--brandPrimary);border:1px dashed var(--accentLine);border-radius:4px;padding:1px 4px;font:600 10px 'Open Sans';cursor:pointer}
+</style>
+</head>
+<body>
+<div class="toolbar">
+  <b>Portada de la app</b>
+  <select id="lang" title="Idioma que editas"><option value="es">Español</option><option value="en">English</option></select>
+  <button id="theme">Tema: claro</button>
+  <span id="status">Cargando…</span>
+  <span class="sp"></span>
+  <button id="reload" title="Descarta lo no guardado y vuelve a leer los JSON">Descartar</button>
+  <button id="save" disabled>Guardar</button>
+  <button id="publish" class="primary" title="Sube la portada a GitHub; la app la coge al reabrirse">Publicar en la app</button>
+</div>
+<div class="stage"><div class="win" id="win"><div class="titlebar"><i><b></b><b></b><b></b></i>ConfAI</div><div class="app" id="app">
+  <div class="side"><div style="width:60%"></div><div></div><div></div><div style="width:70%"></div><div></div><div style="width:50%"></div></div>
+  <div class="col center" id="portada_centro"></div>
+  <div class="col aside" id="portada_derecha"></div>
+</div></div></div>
+<script>
+// AppSemanticColors.light / .dark de la app (lib/src/theme/design_system/app_semantic_colors.dart)
+const THEMES = {
+  light: { brandPrimary:'#7D67C0', accentSoft:'rgba(125,103,192,0.08)', accentLine:'rgba(125,103,192,0.55)', surface:'#FFFFFF', surfaceMuted:'#F4F7FC', surfaceRaised:'#FBFCFE',
+    textPrimary:'#1F2937', textSecondary:'#4B5563', textMuted:'#6B7280', textTertiary:'#9CA3AF', border:'#E9EDF5', controlBorder:'#C3C3C3', success:'#14804A', danger:'#D12953',
+    infoSurface:'rgba(125,103,192,0.08)', logoText:'#6B6B6B', sidebarBg:'#F9F9F9', sidebarLine:'#E5E7EB', divider:'#EEF1F6', titleBg:'#ECECEC' },
+  dark: { brandPrimary:'#7D67C0', accentSoft:'rgba(125,103,192,0.08)', accentLine:'rgba(125,103,192,0.55)', surface:'#1B1B1F', surfaceMuted:'#16161A', surfaceRaised:'#232329',
+    textPrimary:'#F2F3F5', textSecondary:'#B8BDC9', textMuted:'#9BA3B3', textTertiary:'#868FA0', border:'#2D2D33', controlBorder:'#3A3A42', success:'#3FBE7E', danger:'#F06A8B',
+    infoSurface:'rgba(125,103,192,0.08)', logoText:'#D7D7DB', sidebarBg:'#121212', sidebarLine:'#2A2A2A', divider:'#26262B', titleBg:'#2A2A2E' },
+};
+const IDS = ['portada_centro', 'portada_derecha'];
+const NAMES = { brand: 'Logo', label: 'Etiqueta', headline: 'Titular', text: 'Párrafo', actions: 'Botones', features: 'Argumentos', legal: 'Aviso legal', news: 'Noticias', banner: 'Franja' };
+// AppIcons de la app (lib/src/theme/design_system/app_icons.dart) → glifo Lucide.
+const ICONS = { add: 'plus', upload: 'upload', audio: 'file-audio', lock: 'lock', info: 'info', shield: 'shield', sparkle: 'sparkles', documents: 'file-text', chat: 'message-circle', check: 'check', alert: 'circle-alert', book: 'book-open', mail: 'mail', openExternal: 'external-link', newChat: 'message-circle-plus', library: 'library', clients: 'users', skills: 'graduation-cap', templates: 'layout-template' };
+const icon = (name) => ICONS[name] ? `<i class="lu" data-lucide="${ICONS[name]}"></i>` : '';
+const ACTIONS = { new_chat: 'chat nuevo', upload_document: 'abrir en editor', transcribe_audio: 'abrir en editor', create_client: 'nuevo cliente', checkout: 'checkout', url: 'enlace' };
+const t = (es, en = es) => ({ es, en });
+const TEMPLATES = {
+  brand: () => ({ type: 'brand' }),
+  label: () => ({ type: 'label', text: t('Nueva etiqueta', 'New label') }),
+  headline: () => ({ type: 'headline', text: t('Nuevo titular', 'New headline') }),
+  text: () => ({ type: 'text', text: t('Nuevo párrafo.', 'New paragraph.') }),
+  actions: () => ({ type: 'actions', items: [{ label: t('Nuevo botón', 'New button'), action: 'new_chat', variant: 'primary', icon: 'add' }] }),
+  features: () => ({ type: 'features', items: [{ number: '01', title: t('Título'), subtitle: t('Subtítulo') }] }),
+  legal: () => ({ type: 'legal', text: t('Al usar ConfAI aceptas los {terms}.', 'By using ConfAI you accept the {terms}.'), links: { terms: { label: t('Términos', 'Terms'), url: 'https://confidentialai.es/terms' } } }),
+  news: () => ({ type: 'news', label: t('Últimas noticias', 'Latest news'), title: t('Título'), sections: [{ title: t('Sección'), items: [t('Novedad')] }] }),
+  banner: () => ({ type: 'banner', text: t('Texto de la franja.', 'Banner text.'), icon: 'lock', tone: 'info' }),
+};
+
+let docs = {}, lang = 'es', theme = 'light', dirty = false, open = {};
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const status = (msg, kind = '') => { const el = $('#status'); el.textContent = msg; el.className = kind; el.title = msg; };
+const markDirty = () => { dirty = true; $('#save').disabled = false; status('Cambios sin guardar'); };
+
+function applyTheme() {
+  for (const [k, v] of Object.entries(THEMES[theme])) document.documentElement.style.setProperty('--' + k, v);
+  $('#theme').textContent = 'Tema: ' + (theme === 'dark' ? 'oscuro' : 'claro');
+}
+
+// Un texto por idioma editable: data-p es la ruta dentro del documento.
+const ed = (path, obj, cls = '', ph = 'Escribe…') => `<div class="${cls}" contenteditable="plaintext-only" spellcheck="false" data-p="${path}" data-ph="${ph}">${esc(obj?.[lang] ?? (lang === 'en' ? '' : ''))}</div>`;
+
+function block(b, p) {
+  switch (b.type) {
+    case 'brand': return `<div class="brand"><img src="brand.png" alt=""><span>Conf<i>AI</i></span></div>`;
+    case 'label': return ed(`${p}.text`, b.text, 'label');
+    case 'headline': return ed(`${p}.text`, b.text, 'headline');
+    case 'text': return `<div class="prose">${b.title ? ed(`${p}.title`, b.title, 'ptitle') : ''}${ed(`${p}.text`, b.text)}</div>`;
+    case 'actions': return `<div class="actions">${b.items.map((a, i) => `
+      <div class="btn ${a.variant === 'secondary' ? 'secondary' : 'primary'}">${icon(a.icon)}${ed(`${p}.items.${i}.label`, a.label)}
+        <span class="opts"><small data-op="variant" data-p="${p}.items.${i}" title="Cambiar estilo">${a.variant === 'secondary' ? 'secundario' : 'principal'}</small>
+        <small title="Qué hace">${ACTIONS[a.action] ?? a.action}</small>
+        <small data-op="rm-item" data-p="${p}.items.${i}" title="Quitar botón">✕ quitar</small></span></div>`).join('')}
+      <button class="mini" data-op="add-item" data-p="${p}.items">+ botón</button></div>`;
+    case 'features': { const n = featureColumns(b.items.length); return `<div class="features" style="grid-template-columns:repeat(${n},1fr)">${b.items.map((f, i) => `
+      <div class="feat${i % n === 0 ? ' first' : ''}${i % n === n - 1 || i === b.items.length - 1 ? ' last' : ''}"><div class="n" contenteditable="plaintext-only" data-p="${p}.items.${i}.number" data-raw>${esc(f.number)}</div>${ed(`${p}.items.${i}.title`, f.title, 't')}${ed(`${p}.items.${i}.subtitle`, f.subtitle, 's')}
+      <button class="mini" data-op="rm-item" data-p="${p}.items.${i}">✕ quitar</button></div>`).join('')}
+      <div class="featadd"><button class="mini" data-op="add-item" data-p="${p}.items">+ argumento</button></div></div>`; }
+    case 'legal': return ed(`${p}.text`, b.text, 'legal');
+    case 'news': return `${b.label ? ed(`${p}.label`, b.label, 'nlabel') : ''}${ed(`${p}.title`, b.title, 'ntitle')}${b.intro ? ed(`${p}.intro`, b.intro, 'intro') : ''}
+      <div class="acc">${b.sections.map((s, i) => { const k = `${p}.sections.${i}`; const isOpen = open[k] ?? i === 0; return `
+        <div class="sec"><div class="hd"><span class="tg" data-op="toggle" data-p="${k}"><i class="lu" data-lucide="${isOpen ? 'minus' : 'plus'}"></i></span>${ed(`${k}.title`, s.title)}<span class="cnt">${s.items.length} ${s.items.length === 1 ? 'cambio' : 'cambios'}</span>
+          <button class="mini" data-op="rm-item" data-p="${k}">✕</button></div>
+        ${isOpen ? `<ul>${s.items.map((it, j) => `<li>${ed(`${k}.items.${j}`, it)}<button class="mini" data-op="rm-item" data-p="${k}.items.${j}">✕</button></li>`).join('')}
+          <li class="addli"><button class="mini" data-op="add-item" data-p="${k}.items">+ novedad</button></li></ul>` : ''}</div>`; }).join('')}</div>
+      <button class="mini" data-op="add-item" data-p="${p}.sections">+ sección</button>`;
+    case 'banner': return `<div class="banner">${icon(b.icon)}${ed(`${p}.text`, b.text)}</div>`;
+    default: return `<div class="legal">Bloque «${esc(b.type)}» que el editor no sabe pintar.</div>`;
+  }
+}
+
+// _gapAfter de home_block_view.dart: brand xl8, label md, headline xl4, text xl7, actions xl8, resto xl6.
+const GAP = { brand: 40, label: 8, headline: 20, text: 30, actions: 40 };
+function render() {
+  for (const id of IDS) {
+    const col = document.getElementById(id), doc = docs[id];
+    if (!doc) { col.innerHTML = ''; continue; }
+    // Como en la app: los argumentos y el aviso legal cierran la columna central abajo.
+    const footer = (b) => id === 'portada_centro' && (b.type === 'features' || b.type === 'legal');
+    const html = (b, i) => `<div class="blk${b.enabled === false ? ' hidden' : ''}" style="margin-bottom:${GAP[b.type] ?? 24}px">
+        <div class="ctl"><span>${NAMES[b.type] ?? b.type}</span>
+          <button data-op="up" data-i="${i}" data-c="${id}" title="Subir">↑</button><button data-op="down" data-i="${i}" data-c="${id}" title="Bajar">↓</button>
+          <button data-op="hide" data-i="${i}" data-c="${id}">${b.enabled === false ? 'Mostrar' : 'Ocultar'}</button>
+          <button data-op="del" data-i="${i}" data-c="${id}" title="Borrar bloque">Borrar</button></div>
+        ${block(b, `${id}.blocks.${i}`)}</div>`;
+    const top = doc.blocks.map((b, i) => footer(b) ? '' : html(b, i)).join('');
+    const bottom = doc.blocks.map((b, i) => footer(b) ? html(b, i) : '').join('');
+    col.classList.toggle('off-col', doc.enabled === false);
+    col.innerHTML = `<div class="colhd">${id === 'portada_centro' ? 'Columna central' : 'Panel derecho'} · <label><input type="checkbox" data-op="col" data-c="${id}" ${doc.enabled !== false ? 'checked' : ''}> visible</label><select data-op="add" data-c="${id}"><option value="">+ bloque</option>${Object.entries(NAMES).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></div>
+      ${top}<div class="grow"></div>${bottom}`;
+  }
+  $('#app').classList.toggle('noaside', docs.portada_derecha?.enabled === false);
+  window.lucide?.createIcons({ attrs: { 'stroke-width': 1.5 } });
+}
+
+// buildFeatureRow: 4 columnas si a cada texto le quedan 140, si no 2, si no 1.
+function featureColumns(count) {
+  const w = document.getElementById('portada_centro').clientWidth - 80;
+  const fits = (n) => (w - (n - 1) - 2 * (n - 1) * 16) / n >= 140;
+  return Math.min(count, fits(4) ? 4 : fits(2) ? 2 : 1);
+}
+
+// La ventana va a su tamaño real; si no cabe, se encoge entera.
+function fit() {
+  const s = Math.min(1, (innerWidth - 48) / 1240, (innerHeight - 96) / 700);
+  $('#win').style.transform = `scale(${s})`;
+}
+addEventListener('resize', fit);
+
+// Ruta "portada_centro.blocks.3.text" → [objeto padre, clave].
+function locate(path) {
+  const parts = path.split('.'); let o = docs;
+  for (const k of parts.slice(0, -1)) o = o[k];
+  return [o, parts.at(-1)];
+}
+
+document.addEventListener('input', (e) => {
+  const el = e.target.closest('[data-p][contenteditable]'); if (!el) return;
+  const [o, k] = locate(el.dataset.p);
+  const value = el.innerText.replace(/\n$/, '');
+  if ('raw' in el.dataset) o[k] = value;
+  else if (o[k] && typeof o[k] === 'object') o[k][lang] = value;
+  else o[k] = { es: value };
+  markDirty();
+});
+document.addEventListener('keydown', (e) => {
+  // Enter sólo hace salto de línea en el titular; en el resto termina la edición.
+  const el = e.target.closest?.('[contenteditable]');
+  if (el && e.key === 'Enter' && !el.classList.contains('headline')) { e.preventDefault(); el.blur(); }
+  if ((e.metaKey || e.ctrlKey) && e.key === 's') { e.preventDefault(); save(); }
+});
+document.addEventListener('click', (e) => {
+  const el = e.target.closest('[data-op]'); if (!el || el.tagName === 'SELECT' || el.tagName === 'INPUT') return;
+  const op = el.dataset.op, doc = docs[el.dataset.c], i = Number(el.dataset.i);
+  if (op === 'up' && i > 0) [doc.blocks[i - 1], doc.blocks[i]] = [doc.blocks[i], doc.blocks[i - 1]];
+  else if (op === 'down' && i < doc.blocks.length - 1) [doc.blocks[i + 1], doc.blocks[i]] = [doc.blocks[i], doc.blocks[i + 1]];
+  else if (op === 'hide') { if (doc.blocks[i].enabled === false) delete doc.blocks[i].enabled; else doc.blocks[i].enabled = false; }
+  else if (op === 'del') { if (!confirmDel(doc.blocks[i])) return; doc.blocks.splice(i, 1); }
+  else if (op === 'toggle') { open[el.dataset.p] = !(open[el.dataset.p] ?? el.dataset.p.endsWith('.0')); render(); return; }
+  else if (op === 'variant') { const [o, k] = locate(el.dataset.p); o[k].variant = o[k].variant === 'secondary' ? 'primary' : 'secondary'; }
+  else if (op === 'rm-item') { const [o, k] = locate(el.dataset.p); if (o.length <= 1) return status('Tiene que quedar al menos uno: para quitarlo todo, borra el bloque.', 'err'); o.splice(Number(k), 1); }
+  else if (op === 'add-item') {
+    const [o, k] = locate(el.dataset.p), list = o[k], last = list.at(-1);
+    const copy = JSON.parse(JSON.stringify(last));
+    if (copy && typeof copy === 'object' && 'number' in copy) copy.number = String(list.length + 1).padStart(2, '0');
+    list.push(copy);
+  } else return;
+  markDirty(); render();
+});
+// Sin diálogos del navegador: borrar pide un segundo clic.
+let armed = null;
+function confirmDel(b) { if (armed === b) { armed = null; return true; } armed = b; status(`Pulsa «Borrar» otra vez para quitar el bloque ${NAMES[b.type] ?? b.type}.`, 'err'); return false; }
+document.addEventListener('change', (e) => {
+  const el = e.target;
+  if (el.dataset.op === 'add' && el.value) { docs[el.dataset.c].blocks.push(TEMPLATES[el.value]()); markDirty(); render(); }
+  if (el.dataset.op === 'col') { const d = docs[el.dataset.c]; d.enabled = el.checked; markDirty(); render(); }
+});
+
+async function load() {
+  for (const id of IDS) docs[id] = await (await fetch(`../home/${id}.json`, { cache: 'no-store' })).json();
+  dirty = false; $('#save').disabled = true; render(); status('Portada cargada del repo.');
+}
+async function post(url, data) { const r = await fetch(url, { method: 'POST', body: JSON.stringify(data) }); return { ok: r.ok, ...(await r.json()) }; }
+async function save() {
+  if (!dirty) return true;
+  status('Guardando…');
+  for (const id of IDS) {
+    const r = await post(`/api/home/${id}`, docs[id]);
+    if (!r.ok) { status('No se guardó: ' + r.out, 'err'); return false; }
+  }
+  dirty = false; $('#save').disabled = true; status('Guardado y validado. Falta publicar para que lo vea la app.', 'ok'); return true;
+}
+
+$('#save').onclick = save;
+$('#publish').onclick = async () => {
+  if (!(await save())) return;
+  status('Publicando en GitHub…'); $('#publish').disabled = true;
+  const r = await post('/api/publish', { message: 'Portada: cambios desde el editor' });
+  $('#publish').disabled = false; status(r.out, r.ok ? 'ok' : 'err');
+};
+$('#reload').onclick = load;
+$('#lang').onchange = (e) => { lang = e.target.value; render(); };
+$('#theme').onclick = () => { theme = theme === 'dark' ? 'light' : 'dark'; applyTheme(); };
+window.addEventListener('beforeunload', (e) => { if (dirty) e.preventDefault(); });
+applyTheme(); fit();
+if (location.protocol === 'file:') status('Ábrelo con: node scripts/portada-editor.mjs', 'err'); else load();
+</script>
+</body>
+</html>
