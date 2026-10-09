@@ -2,7 +2,7 @@
 
 Mensajes que la app de escritorio ConfAI muestra a los usuarios (plan caducado, cuota agotada, compra completada, avisos). Viven aquí, fuera del binario: editar un fichero en `main` cambia lo que ven todos los usuarios en la siguiente comprobación de la app, sin release y sin tocar telemetría ni billing.
 
-Los sirve el microservicio de `server/` (ver «Microservicio») en `https://messages.confai.app/raw/`, con las mismas rutas que el repo. Cada push a `main` publica una imagen nueva con el contenido dentro.
+Los sirve el microservicio de `server/` (ver «Microservicio») en `https://messages.confai.app/raw/`, con las mismas rutas que el repo. Cada push a `main` los publica: si sólo cambia contenido se recarga en caliente, sin reconstruir la imagen ni cortar el servicio (ver «Despliegue»).
 
 ## Cómo funciona
 
@@ -218,7 +218,7 @@ Y los colores: `{{c.<rol>}}` sólo en el HTML. Los resuelve la app con `context.
 
 ## Microservicio
 
-`server/` es un NestJS que carga en memoria el contenido del repo (el de la imagen) y lo sirve. No evalúa nada: eso lo hace la app con `codes.json`.
+`server/` es un NestJS que carga en memoria el contenido del repo (en producción, el del directorio montado; ver «Despliegue») y lo sirve. No evalúa nada: eso lo hace la app con `codes.json`.
 
 | Endpoint | Qué devuelve |
 |---|---|
@@ -243,11 +243,28 @@ Ficheros de entorno (`server/src/load-env.ts`, la misma regla que el resto de se
 | | Producción (`compose.yaml`) | Local (`compose.prod.local.yaml`, `make up-local`) |
 |---|---|---|
 | Imagen | `ghcr.io/gravitonai-dev/app-messages` (la publica la CI) | `app-messages:local`, compilada aquí |
-| Contenido | El que va dentro de la imagen | Este clon, montado en solo lectura |
+| Contenido | El del directorio montado en `/content`; el de la imagen queda de respaldo | Este clon, montado en solo lectura |
 | Variables | `.env` (y `.env.prod` por debajo) | Solo `.env.prod.local` |
 | Puerto | `127.0.0.1:${HOST_PORT}` (el proxy inverso) | `127.0.0.1:3042` |
 
-Despliegue: `.github/workflows/deploy.yml` valida, publica `ghcr.io/gravitonai-dev/app-messages` y hace `docker compose pull && up -d` en el VPS por SSH. La configuración está en `server/.env.example`.
+### Despliegue
+
+Todo lo arranca un push a `main`, y lo que se hace depende de qué cambie:
+
+| Cambia | Qué hace `deploy.yml` | Corte |
+|---|---|---|
+| Sólo contenido (`messages/`, `home/`, `codes.json`, `assets/`, `templates/`…) | Sincroniza el contenido al VPS y llama a `POST /internal/reload` | Ninguno: el servicio no se reinicia |
+| Algo de `server/` (código, `Dockerfile`) o el propio workflow | Publica la imagen en GHCR y hace `docker compose pull && up -d` | El del reinicio |
+
+Antes de nada corre `validate`, que construye `--target test` de `server/Dockerfile`: contenido, fixtures y tests del servicio dentro del contenedor, con la misma toolchain con la que se publica.
+
+Por qué el contenido va en un volumen y no en la imagen: editar un mensaje es lo que más se hace, y no debería costar reconstruir una imagen ni cortar el servicio. `reload()` relee y valida todo (índice, catálogo, cada mensaje y su HTML) antes de sustituir nada, así que un JSON roto falla el despliegue y deja el contenido anterior sirviéndose.
+
+En el VPS sólo hacen falta **docker y ssh**: el contenido viaja como `tar` por `scp` y se extrae dentro de un contenedor, sin necesitar `rsync`, `tar`, `git` ni `node` en la máquina. Se escribe dentro del directorio montado (un bind mount sigue al inode: sustituir el directorio con `mv` dejaría al contenedor mirando el viejo) y se vacía antes de extraer, para que un mensaje borrado del repo desaparezca también allí.
+
+Lo que el VPS necesita tener, en `VPS_APP_DIR`: `compose.yaml`, su `.env` (con `RELOAD_TOKEN`; ver `server/.env.example`) y el directorio `content/`, que crea y llena el propio despliegue.
+
+Secrets del repo: `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`, `VPS_APP_DIR` y `VPS_RELOAD_TOKEN` (el mismo `RELOAD_TOKEN` del `.env` del VPS).
 
 ## Vista previa
 
