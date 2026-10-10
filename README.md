@@ -96,6 +96,14 @@ Reglas:
 - Manda el repo: si trae el contenedor, lo que no esté en `blocks` no se pinta. Si el fichero no se puede descargar y no hay caché, la app enseña su portada embebida (la de antes de existir este repo). Si está en caché, enseña la caché.
 - Los iconos admitidos son nombres del catálogo de la app: `add`, `upload`, `audio`, `lock`, `info`, `shield`, `sparkle`, `documents`, `chat`, `check`, `alert`, `book`, `mail`, `openExternal`, `newChat`, `library`, `clients`, `skills`, `templates`.
 
+### Editor de la portada
+
+```
+node scripts/portada-editor.mjs
+```
+
+y abrir http://localhost:8788/preview/portada.html. Pinta los dos contenedores como la app y deja editar sus bloques. **Guardar** escribe `home/*.json` y pasa el validador; **Publicar** hace commit y push de `home/` a `main`, que es de donde la lee la app.
+
 ## Renderizado fijo
 
 Un mensaje se ve exactamente igual que en `preview/` en cualquier ventana o monitor. La app maqueta el contenido al ancho fijo del mensaje (`size`), con fuente base fija, y si la ventana es más pequeña escala el diálogo entero hacia abajo; nunca recoloca el contenido. Si el alto no cabe, scroll interno.
@@ -249,7 +257,11 @@ Para ver un mensaje tal y como lo pintará la app (AppDialog o AppBanner, blur, 
 python3 -m http.server 8787
 ```
 
-y abrir http://localhost:8787/preview/?m=trial_expired (añade `&theme=dark` para el tema oscuro y `&lang=en` para el inglés). El desplegable cambia de mensaje; los botones `confai://` muestran la acción abajo a la izquierda en lugar de ejecutarla.
+y abrir http://localhost:8787/preview/?m=trial_expired (añade `&theme=dark` para el tema oscuro y `&lang=en` para el inglés). Los botones `confai://` muestran la acción abajo a la izquierda en lugar de ejecutarla.
+
+El desplegable trae **todo lo que la app pide**: los mensajes y, bajo «Portada», los dos contenedores (`portada_centro`, `portada_derecha`). Al elegir uno se pinta la portada entera con el contenedor que miras destacado y el otro atenuado. La portada la dibuja `preview/portada.html` en modo sólo lectura (`?readonly=1`), que es el mismo render que usa su editor: no hay dos sitios donde se decida cómo se pinta un bloque.
+
+Para **editar** la portada, en vez de sólo verla, sigue haciendo falta su editor (`node scripts/portada-editor.mjs`, más abajo).
 
 ## Evaluador de referencia y fixtures
 
