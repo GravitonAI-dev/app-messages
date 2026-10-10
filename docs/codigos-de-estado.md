@@ -1,6 +1,6 @@
 # Códigos de estado: telemetría, Gateway y app-messages
 
-**Estado:** en implementación: `PLAN_EXPIRED.DAYS_LIMIT_REACHED`, `PLAN_EXPIRING_SOON`, `PLAN_REVOKED`, `NO_PLAN`, `QUOTA_EXHAUSTED.*` y, de la Gateway, `GATEWAY.INSUFFICIENT_CAPABILITY.max_days` (también como `USAGE_LIMIT_EXCEEDED.max_days`), `GATEWAY.USAGE_LIMIT_EXCEEDED.*`, `GATEWAY.INSUFFICIENT_CAPABILITY.*` (cuota), `GATEWAY.WINDOW_LIMIT_EXCEEDED` y `GATEWAY.TOKEN_LIMIT_EXCEEDED`. Cuándo se renueva la cuota (`resets_at`) sigue pendiente (§6). El catálogo vigente es `codes.json`; el ejemplo del §4 es el catálogo completo al que se quiere llegar.
+**Estado:** en implementación: `PLAN_EXPIRED.DAYS_LIMIT_REACHED`, `PLAN_EXPIRING_SOON`, `PLAN_REVOKED`, `NO_PLAN`, `QUOTA_EXHAUSTED.*` y, de la Gateway, `GATEWAY.INSUFFICIENT_CAPABILITY.max_days` (también como `USAGE_LIMIT_EXCEEDED.max_days`), `GATEWAY.USAGE_LIMIT_EXCEEDED.*`, `GATEWAY.INSUFFICIENT_CAPABILITY.*` (cuota), `GATEWAY.WINDOW_LIMIT_EXCEEDED` y `GATEWAY.TOKEN_LIMIT_EXCEEDED`. `resets_at` ya llega: el fin de la ventana en curso, o `null` cuando el plan acaba con ella (§6). El catálogo vigente es `codes.json`; el ejemplo del §4 es el catálogo completo al que se quiere llegar.
 
 ## Por qué
 
@@ -66,7 +66,7 @@ Hay códigos de dos tipos:
 | Código | Cuándo | `params` | Bloquea | Mensaje |
 |---|---|---|---|---|
 | `PLAN_EXPIRED.DAYS_LIMIT_REACHED` | `now >= created_at + max_days` de la membresía en vigor, **aunque antes se agotara la cuota** | `plan_code`, `plan_name`, `created_at`, `expires_at`, `max_days` | Sí | `trial_expired` si `plan_code` es `plan_00`; si no, `subscription_expired` |
-| `QUOTA_EXHAUSTED.PROMPTS_LIMIT_REACHED` | Contador de prompts ≥ `max_prompts` (un límite con ventana no cuenta: se renueva solo) | `plan_code`, `used`, `limit`, `usage_percentage`, `since`, `resets_at` (hoy `null`) | No | `trial_quota_exhausted` si `plan_code` es `plan_00`; si no, `quota_exhausted` |
+| `QUOTA_EXHAUSTED.PROMPTS_LIMIT_REACHED` | Contador de prompts ≥ `max_prompts`. Con `window_in_minutes`, el uso de la ventana en curso (tramos fijos desde el alta de la membresía) | `plan_code`, `used`, `limit`, `usage_percentage`, `since` (inicio de la ventana, o alta de la membresía sin ventana), `resets_at` (fin de la ventana si vuelve a empezar con el plan vivo; `null` si el plan acaba con ella, como el trial, o sin ventana) | No | `trial_quota_exhausted` si `plan_code` es `plan_00`; si no, `quota_exhausted` |
 | `QUOTA_EXHAUSTED.INPUT_TOKENS_LIMIT_REACHED` | Tokens de entrada ≥ `max_input_tokens` | ídem | No | ídem |
 | `QUOTA_EXHAUSTED.OUTPUT_TOKENS_LIMIT_REACHED` | Tokens de salida ≥ `max_output_tokens` | ídem | No | ídem |
 | `PLAN_REVOKED` | La membresía que se responde está revocada (`expired_reason: revoked`): no queda ninguna en vigor. Hoy es la suscripción impagada (Stripe la termina tras los reintentos) o una baja de un administrador | `plan_code` | Sí | `payment_failed` |
@@ -87,7 +87,7 @@ El Gateway no cambia: el código del catálogo se forma con lo que ya responde, 
 | `GATEWAY.USAGE_LIMIT_EXCEEDED.<constraint>` | 403, cuota del plan | No | Como `QUOTA_EXHAUSTED.*` (la app pone el `plan_code` de la sesión, que el Gateway no dice) y vuelve a pedir `user-usage` |
 | `GATEWAY.INSUFFICIENT_CAPABILITY.<constraint>` | 403, cuota del plan: la Gateway lo dice así cuando telemetría ya quitó el permiso (p. ej. la ventana llena) y el motivo es un límite de uso | No | ídem (`max_days` tiene su propia entrada: muro) |
 | `GATEWAY.TOKEN_LIMIT_EXCEEDED` | 403, cuota de tokens | No | ídem |
-| `GATEWAY.WINDOW_LIMIT_EXCEEDED` | 429, la ventana de uso del plan está llena (`window_in_minutes`) | No | ídem; telemetría da `QUOTA_EXHAUSTED.*` con `resets_at` = fin de la ventana |
+| `GATEWAY.WINDOW_LIMIT_EXCEEDED` | 429, la ventana de uso del plan está llena (`window_in_minutes`). En la práctica casi nunca sale: el Gateway comprueba antes el consumo de la ventana contra el límite y responde `INSUFFICIENT_CAPABILITY.<constraint>` (403) | No | ídem; telemetría da `QUOTA_EXHAUSTED.*` con `resets_at` = fin de la ventana (o `null` si el plan acaba con ella) |
 | `GATEWAY.RATE_LIMIT_EXCEEDED` | 429 | No | Texto en el chat: «Demasiadas peticiones, espera un momento» |
 | `GATEWAY.EMAIL_NOT_VERIFIED` | 403 | No | Mensaje para verificar el correo |
 | `GATEWAY.ACCOUNT_NOT_READY` | 403 | No | Texto en el chat |
@@ -116,7 +116,7 @@ En `GET /api/user-usage/{uid}` se **añade** un campo. No se quita ni se cambia 
     {
       "code": "QUOTA_EXHAUSTED.INPUT_TOKENS_LIMIT_REACHED",
       "params": { "plan_code": "plan_00", "used": 500000, "limit": 500000,
-                  "since": "2026-10-02T13:03:34.478Z", "resets_at": null }
+                  "since": "2026-10-02T13:03:34.478Z", "resets_at": null }   // null: la ventana del trial acaba con el plan
     }
   ]
 }
@@ -234,7 +234,7 @@ Si la caducidad que se guarda en MongoDB (lo que lee el Gateway) debe distinguir
 1. ~~**`PLAN_REVOKED`**~~: decidido (ver la tabla de suscripciones de pago); sale `payment_failed`. Pendiente: la cancelación (§8).
 2. **¿La cuota se renueva?** Decidido por tipo de plan:
    - **Trial** (`plan_00`): no se renueva. Agotada, solo vuelve activando un plan; si espera, el trial caduca por fecha (`PLAN_EXPIRED`). Mensaje `trial_quota_exhausted`, sin «Esperar a la renovación».
-   - **Plan de pago:** tendrá ventanas de uso (en desarrollo). Mensaje `quota_exhausted` con «Se renueva {{usage_reset}}»; cuando estén, telemetría da `resets_at` y la app lo pone en `usage_reset` (hoy `null`: texto genérico).
+   - **Plan de pago:** ventanas de uso en tramos fijos desde el pago (hoy semanales, 10080 min; `-1` en el plan = una sola ventana por periodo). Mensaje `quota_exhausted` con «Se renueva {{usage_reset}}»: telemetría da `resets_at` (fin de la ventana en curso) y la app lo pone en `usage_reset`; `null` sólo si el plan acaba con la ventana (texto genérico). Cada renovación de Stripe es una membresía nueva: el uso vuelve a cero. Además `/api/user-usage` trae `window_resets_at` con la cuenta sana, para la tarjeta Cuenta de Ajustes de la app.
 3. **Lo que guarda MongoDB:** ¿la caducidad guardada (lo que lee el Gateway) también debe separar fecha y cuota? Si una cuota agotada no debe impedir el resto de la app pero sí el chat, el Gateway ya lo resuelve con la capacidad o la cuota (`USAGE_LIMIT_EXCEEDED`). Conviene revisarlo con quien lleve el Gateway.
 4. **`N` de `PLAN_EXPIRING_SOON`** y la ventana de `PLAN_STARTED` (24 h): ¿configuración de telemetría o fijos?
 5. **Mensajes nuevos que habría que crear:** `email_not_verified` y los textos `inline` definitivos (`payment_failed` ya existe).
@@ -251,7 +251,7 @@ Si la caducidad que se guarda en MongoDB (lo que lee el Gateway) debe distinguir
 
 Orden de despliegue: telemetría y web a la vez (o la web antes), después `app-messages`, después la app. Una app nueva con una telemetría antigua no recibe códigos y no bloquea; el Gateway sigue rechazando.
 
-Pendiente: cuándo se renueva la cuota (`resets_at`, §6), `PLAN_STARTED`, los códigos del Gateway que aún no están en el catálogo, y la cancelación (§8).
+Pendiente: `PLAN_STARTED`, los códigos del Gateway que aún no están en el catálogo, y la cancelación (§8).
 
 ## 8. Cancelación de una suscripción (pendiente)
 
