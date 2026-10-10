@@ -179,11 +179,27 @@ const TEMPLATES = {
 };
 
 const Q = new URLSearchParams(location.search);
-// Sólo lectura: la pinta la vista previa dentro de un iframe, sin editor.
-const RO = Q.has('readonly');
+// Sólo lectura mientras no se demuestre lo contrario. Editar necesita el
+// editor local (`node scripts/portada-editor.mjs`), que es quien sirve
+// /api/save y /api/publish; se le reconoce porque responde /api/editor. El
+// servicio desplegado sirve esta misma página en /preview/ y ahí no existe
+// ese backend: así no se enseña una interfaz de edición que no funciona, sin
+// depender de que quien abra la URL ponga `?readonly=1`.
+let RO = true;
 const FOCUS = Q.get('focus');
 let docs = {}, lang = Q.get('lang') === 'en' ? 'en' : 'es', theme = Q.get('theme') === 'dark' ? 'dark' : 'light', dirty = false, open = {};
-if (RO) document.documentElement.classList.add('ro');
+document.documentElement.classList.add('ro');
+
+/** Si la sirve el editor local: su /api/editor responde. Cualquier fallo deja la página en sólo lectura. */
+async function editorDelante() {
+  if (Q.has('readonly')) return false;
+  try {
+    const r = await fetch('/api/editor', { cache: 'no-store' });
+    return r.ok && (await r.json())?.editor === true;
+  } catch {
+    return false;
+  }
+}
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const status = (msg, kind = '') => { const el = $('#status'); el.textContent = msg; el.className = kind; el.title = msg; };
@@ -348,7 +364,14 @@ $('#lang').onchange = (e) => { lang = e.target.value; render(); };
 $('#theme').onclick = () => { theme = theme === 'dark' ? 'light' : 'dark'; applyTheme(); };
 window.addEventListener('beforeunload', (e) => { if (dirty) e.preventDefault(); });
 applyTheme(); fit();
-if (!RO && location.protocol === 'file:') status('Ábrelo con: node scripts/portada-editor.mjs', 'err'); else load();
+(async () => {
+  if (await editorDelante()) {
+    RO = false;
+    document.documentElement.classList.remove('ro');
+  }
+  if (!RO && location.protocol === 'file:') status('Ábrelo con: node scripts/portada-editor.mjs', 'err');
+  else load();
+})();
 </script>
 </body>
 </html>
