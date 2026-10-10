@@ -87,7 +87,7 @@ El Gateway no cambia: el código del catálogo se forma con lo que ya responde, 
 | `GATEWAY.USAGE_LIMIT_EXCEEDED.<constraint>` | 403, cuota del plan | No | Como `QUOTA_EXHAUSTED.*` (la app pone el `plan_code` de la sesión, que el Gateway no dice) y vuelve a pedir `user-usage` |
 | `GATEWAY.INSUFFICIENT_CAPABILITY.<constraint>` | 403, cuota del plan: la Gateway lo dice así cuando telemetría ya quitó el permiso (p. ej. la ventana llena) y el motivo es un límite de uso | No | ídem (`max_days` tiene su propia entrada: muro) |
 | `GATEWAY.TOKEN_LIMIT_EXCEEDED` | 403, cuota de tokens | No | ídem |
-| `GATEWAY.WINDOW_LIMIT_EXCEEDED` | 429, la ventana de uso del plan está llena (`window_in_minutes`). En la práctica casi nunca sale: el Gateway comprueba antes el consumo de la ventana contra el límite y responde `INSUFFICIENT_CAPABILITY.<constraint>` (403) | No | ídem; telemetría da `QUOTA_EXHAUSTED.*` con `resets_at` = fin de la ventana (o `null` si el plan acaba con ella) |
+| `GATEWAY.WINDOW_LIMIT_EXCEEDED[.<constraint>]` | 403, la ventana de uso del plan está llena (`window_in_minutes`); el Gateway manda `details.constraintCode`, `details.windowInMinutes`, `details.resetsAt` y la cabecera `Retry-After`. La app compone el código con el constraint, así que el catálogo necesita el comodín `GATEWAY.WINDOW_LIMIT_EXCEEDED.*` | No | ídem; telemetría da `QUOTA_EXHAUSTED.*` con `resets_at` = fin de la ventana (o `null` si el plan acaba con ella) |
 | `GATEWAY.RATE_LIMIT_EXCEEDED` | 429 | No | Texto en el chat: «Demasiadas peticiones, espera un momento» |
 | `GATEWAY.EMAIL_NOT_VERIFIED` | 403 | No | Mensaje para verificar el correo |
 | `GATEWAY.ACCOUNT_NOT_READY` | 403 | No | Texto en el chat |
