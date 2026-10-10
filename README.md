@@ -285,7 +285,11 @@ Para ver un mensaje tal y como lo pintará la app (AppDialog o AppBanner, blur, 
 python3 -m http.server 8787
 ```
 
-y abrir http://localhost:8787/preview/?m=trial_expired (añade `&theme=dark` para el tema oscuro y `&lang=en` para el inglés). El desplegable cambia de mensaje; los botones `confai://` muestran la acción abajo a la izquierda en lugar de ejecutarla.
+y abrir http://localhost:8787/preview/?m=trial_expired (añade `&theme=dark` para el tema oscuro y `&lang=en` para el inglés). Los botones `confai://` muestran la acción abajo a la izquierda en lugar de ejecutarla.
+
+El desplegable trae **todo lo que la app pide**: los mensajes y, bajo «Portada», los dos contenedores (`portada_centro`, `portada_derecha`). Al elegir uno se pinta la portada entera con el contenedor que miras destacado y el otro atenuado. La portada la dibuja `preview/portada.html` en modo sólo lectura (`?readonly=1`), que es el mismo render que usa su editor: no hay dos sitios donde se decida cómo se pinta un bloque.
+
+Para **editar** la portada, en vez de sólo verla, sigue haciendo falta su editor (`node scripts/portada-editor.mjs`, más abajo).
 
 ## Evaluador de referencia y fixtures
 

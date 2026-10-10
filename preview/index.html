@@ -60,6 +60,9 @@
   .bnr.danger{background:var(--dangerSurface);color:var(--dangerText);border-color:var(--danger)}
   .x{position:absolute;top:12px;right:12px;width:24px;height:24px;border-radius:6px;color:var(--textMuted);font-size:16px;line-height:24px;text-align:center;cursor:pointer}
   .x:hover{background:var(--surfaceRaised)}
+  /* La portada se pinta con portada.html en modo sólo lectura: es el mismo
+     render que usa su editor, así que no hay dos formas de pintarla. */
+  #home{position:fixed;inset:44px 0 0 0;width:100%;height:calc(100% - 44px);border:0;background:var(--surface)}
   .meta{position:fixed;left:14px;bottom:10px;font-size:11px;color:var(--textMuted);background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:5px 9px}
 </style>
 </head>
@@ -78,6 +81,7 @@
 <div class="composer">Escribe un mensaje…</div>
 <div id="blur" class="blur" hidden></div>
 <div class="layer"><div id="card" class="card"></div></div>
+<iframe id="home" title="Portada" hidden></iframe>
 <div class="meta" id="meta"></div>
 <script>
 // AppSemanticColors.light / .dark de la app (lib/src/theme/design_system/app_semantic_colors.dart)
@@ -100,7 +104,10 @@ let lang = new URLSearchParams(location.search).get('lang') === 'en' ? 'en' : 'e
 let VARS = VARS_BY_LANG[lang];
 // Un texto del mensaje: una cadena o uno por idioma (si falta el idioma, "es").
 const pick = (v) => (v && typeof v === 'object' ? (v[lang] ?? v.es) : v);
-const subst = (t) => String(pick(t)).replace(/\{\{\s*([a-zA-Z_.]+)\s*\}\}/g, (_, k) => VARS[k] ?? '');
+// La misma forma que VARIABLE_RE de scripts/core/contract.mjs: el nombre
+// admite dígitos, que es lo que hace falta para {{plan.plan_01.name}}.
+const VAR_RE = () => /\{\{\s*([a-zA-Z_][a-zA-Z0-9_.]*)\s*\}\}/g;
+const subst = (t) => String(pick(t)).replace(VAR_RE(), (_, k) => VARS[k] ?? '');
 const q = new URLSearchParams(location.search);
 let theme = q.get('theme') === 'dark' ? 'dark' : 'light';
 let current = null;
@@ -112,6 +119,8 @@ function applyTheme() {
 async function load(id) {
   current = id;
   const idx = await (await fetch('../index.json')).json();
+  if ((idx.home ?? {})[id]) return loadHome(id, idx.home[id]);
+  showHome(false);
   const m = await (await fetch('../' + idx.messages[id])).json();
   // Los códigos de codes.json que llevan a este mensaje (y para qué plan)
   const catalog = await (await fetch('../' + (idx.codes ?? 'codes.json'))).json();
@@ -124,7 +133,7 @@ async function load(id) {
   VARS.plan_name = via.some((v) => v.includes('(plan_00)')) ? 'Trial' : 'Confidential';
   let html = pick(m.html) ?? await (await fetch('../messages/' + pick(m.html_file))).text();
   const t = THEMES[theme];
-  html = html.replace(/\{\{\s*([a-zA-Z_.]+)\s*\}\}/g, (_, k) => k.startsWith('c.') ? (t[k.slice(2)] ?? 'magenta') : (VARS[k] ?? ''))
+  html = html.replace(VAR_RE(), (_, k) => k.startsWith('c.') ? (t[k.slice(2)] ?? 'magenta') : (VARS[k] ?? ''))
              .replaceAll('https://raw.githubusercontent.com/GravitonAI-dev/app-messages/main/', '../');
   const card = document.getElementById('card');
   card.className = 'card ' + m.position + ' ' + (typeof m.size === 'number' ? '' : m.size);
@@ -149,12 +158,44 @@ async function load(id) {
   card.querySelectorAll('a[href^="confai://"]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); document.getElementById('meta').textContent = 'acción: ' + a.getAttribute('href'); }));
   history.replaceState(null, '', `?m=${id}&theme=${theme}&lang=${lang}`);
 }
+// Enseña la portada o el mensaje: son dos vistas distintas de la misma página.
+function showHome(on) {
+  document.getElementById('home').hidden = !on;
+  for (const sel of ['.app', '.composer', '.layer']) document.querySelector(sel).style.display = on ? 'none' : '';
+  if (on) document.getElementById('blur').hidden = true;
+}
+
+async function loadHome(id, path) {
+  showHome(true);
+  // El mismo portada.html del editor, en sólo lectura: un único sitio donde se
+  // decide cómo se pinta cada bloque.
+  document.getElementById('home').src = `portada.html?readonly=1&focus=${id}&theme=${theme}&lang=${lang}`;
+  const doc = await (await fetch('../' + path)).json();
+  const blocks = doc.blocks ?? [];
+  const off = blocks.filter((b) => b.enabled === false).length;
+  const kinds = [...new Set(blocks.map((b) => b.type))].join(', ');
+  document.getElementById('props').textContent =
+    `${id === 'portada_centro' ? 'Columna central' : 'Panel derecho'} · ${doc.enabled === false ? 'oculto' : 'visible'} · ${blocks.length} bloque${blocks.length === 1 ? '' : 's'}${off ? ` (${off} oculto${off === 1 ? '' : 's'})` : ''}`;
+  document.getElementById('meta').textContent = 'bloques: ' + (kinds || 'ninguno');
+  history.replaceState(null, '', `?m=${id}&theme=${theme}&lang=${lang}`);
+}
+
 (async () => {
   applyTheme();
   const idx = await (await fetch('../index.json')).json();
   const pick = document.getElementById('pick');
   for (const id of Object.keys(idx.messages)) pick.append(new Option(id, id));
-  pick.value = q.get('m') && idx.messages[q.get('m')] ? q.get('m') : Object.keys(idx.messages)[0];
+  // Los contenedores de la portada, detrás de los mensajes: la app pide los
+  // dos, así que los dos se pueden ver aquí.
+  const homeIds = Object.keys(idx.home ?? {});
+  if (homeIds.length) {
+    const group = document.createElement('optgroup');
+    group.label = 'Portada';
+    for (const id of homeIds) group.append(new Option(id, id));
+    pick.append(group);
+  }
+  const wanted = q.get('m');
+  pick.value = wanted && (idx.messages[wanted] || (idx.home ?? {})[wanted]) ? wanted : Object.keys(idx.messages)[0];
   pick.addEventListener('change', () => load(pick.value));
   document.getElementById('theme').addEventListener('click', () => { theme = theme === 'dark' ? 'light' : 'dark'; applyTheme(); load(current); });
   const langButton = document.getElementById('lang');

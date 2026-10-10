@@ -121,6 +121,16 @@
   .blk>.mini{position:absolute;left:0;bottom:-22px}
   .colhd{opacity:0;transition:opacity .15s}.col:hover>.colhd{opacity:1}
   .colhd select{background:var(--surface);color:var(--brandPrimary);border:1px dashed var(--accentLine);border-radius:4px;padding:1px 4px;font:600 10px 'Open Sans';cursor:pointer}
+  /* Sólo lectura (?readonly=1): la misma portada sin nada del editor. Así la
+     vista previa de /preview/ la enseña sin duplicar cómo se pinta. */
+  .ro .toolbar{display:none}
+  .ro .stage{inset:0}
+  .ro .blk:hover{outline-color:transparent}
+  .ro .ctl,.ro .blk:hover>.ctl,.ro .mini,.ro .blk:hover .mini,.ro .colhd{display:none!important}
+  .ro [contenteditable],.ro .sec .tg{cursor:default}
+  .ro [contenteditable]:hover{background:none}
+  /* El contenedor que no se está mirando se atenúa, como la columna apagada. */
+  .ro .col.dim{opacity:.3}
 </style>
 </head>
 <body>
@@ -168,7 +178,12 @@ const TEMPLATES = {
   banner: () => ({ type: 'banner', text: t('Texto de la franja.', 'Banner text.'), icon: 'lock', tone: 'info' }),
 };
 
-let docs = {}, lang = 'es', theme = 'light', dirty = false, open = {};
+const Q = new URLSearchParams(location.search);
+// Sólo lectura: la pinta la vista previa dentro de un iframe, sin editor.
+const RO = Q.has('readonly');
+const FOCUS = Q.get('focus');
+let docs = {}, lang = Q.get('lang') === 'en' ? 'en' : 'es', theme = Q.get('theme') === 'dark' ? 'dark' : 'light', dirty = false, open = {};
+if (RO) document.documentElement.classList.add('ro');
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const status = (msg, kind = '') => { const el = $('#status'); el.textContent = msg; el.className = kind; el.title = msg; };
@@ -180,7 +195,9 @@ function applyTheme() {
 }
 
 // Un texto por idioma editable: data-p es la ruta dentro del documento.
-const ed = (path, obj, cls = '', ph = 'Escribe…') => `<div class="${cls}" contenteditable="plaintext-only" spellcheck="false" data-p="${path}" data-ph="${ph}">${esc(obj?.[lang] ?? (lang === 'en' ? '' : ''))}</div>`;
+const ed = (path, obj, cls = '', ph = 'Escribe…') => RO
+  ? `<div class="${cls}">${esc(obj?.[lang] ?? '')}</div>`
+  : `<div class="${cls}" contenteditable="plaintext-only" spellcheck="false" data-p="${path}" data-ph="${ph}">${esc(obj?.[lang] ?? (lang === 'en' ? '' : ''))}</div>`;
 
 function block(b, p) {
   switch (b.type) {
@@ -195,7 +212,7 @@ function block(b, p) {
         <small data-op="rm-item" data-p="${p}.items.${i}" title="Quitar botón">✕ quitar</small></span></div>`).join('')}
       <button class="mini" data-op="add-item" data-p="${p}.items">+ botón</button></div>`;
     case 'features': { const n = featureColumns(b.items.length); return `<div class="features" style="grid-template-columns:repeat(${n},1fr)">${b.items.map((f, i) => `
-      <div class="feat${i % n === 0 ? ' first' : ''}${i % n === n - 1 || i === b.items.length - 1 ? ' last' : ''}"><div class="n" contenteditable="plaintext-only" data-p="${p}.items.${i}.number" data-raw>${esc(f.number)}</div>${ed(`${p}.items.${i}.title`, f.title, 't')}${ed(`${p}.items.${i}.subtitle`, f.subtitle, 's')}
+      <div class="feat${i % n === 0 ? ' first' : ''}${i % n === n - 1 || i === b.items.length - 1 ? ' last' : ''}"><div class="n"${RO ? '' : ` contenteditable="plaintext-only" data-p="${p}.items.${i}.number" data-raw`}>${esc(f.number)}</div>${ed(`${p}.items.${i}.title`, f.title, 't')}${ed(`${p}.items.${i}.subtitle`, f.subtitle, 's')}
       <button class="mini" data-op="rm-item" data-p="${p}.items.${i}">✕ quitar</button></div>`).join('')}
       <div class="featadd"><button class="mini" data-op="add-item" data-p="${p}.items">+ argumento</button></div></div>`; }
     case 'legal': return ed(`${p}.text`, b.text, 'legal');
@@ -220,18 +237,24 @@ function render() {
     // Como en la app: los argumentos y el aviso legal cierran la columna central abajo.
     const footer = (b) => id === 'portada_centro' && (b.type === 'features' || b.type === 'legal');
     const html = (b, i) => `<div class="blk${b.enabled === false ? ' hidden' : ''}" style="margin-bottom:${GAP[b.type] ?? 24}px">
-        <div class="ctl"><span>${NAMES[b.type] ?? b.type}</span>
+        ${RO ? '' : `<div class="ctl"><span>${NAMES[b.type] ?? b.type}</span>
           <button data-op="up" data-i="${i}" data-c="${id}" title="Subir">↑</button><button data-op="down" data-i="${i}" data-c="${id}" title="Bajar">↓</button>
           <button data-op="hide" data-i="${i}" data-c="${id}">${b.enabled === false ? 'Mostrar' : 'Ocultar'}</button>
-          <button data-op="del" data-i="${i}" data-c="${id}" title="Borrar bloque">Borrar</button></div>
+          <button data-op="del" data-i="${i}" data-c="${id}" title="Borrar bloque">Borrar</button></div>`}
         ${block(b, `${id}.blocks.${i}`)}</div>`;
     const top = doc.blocks.map((b, i) => footer(b) ? '' : html(b, i)).join('');
     const bottom = doc.blocks.map((b, i) => footer(b) ? html(b, i) : '').join('');
-    col.classList.toggle('off-col', doc.enabled === false);
-    col.innerHTML = `<div class="colhd">${id === 'portada_centro' ? 'Columna central' : 'Panel derecho'} · <label><input type="checkbox" data-op="col" data-c="${id}" ${doc.enabled !== false ? 'checked' : ''}> visible</label><select data-op="add" data-c="${id}"><option value="">+ bloque</option>${Object.entries(NAMES).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></div>
-      ${top}<div class="grow"></div>${bottom}`;
+    const focused = RO && FOCUS === id;
+    // Apagado se pinta atenuado, salvo si es el que se está mirando: entonces
+    // a plena vista (que está apagado lo dice la barra de la vista previa).
+    col.classList.toggle('off-col', doc.enabled === false && !focused);
+    col.classList.toggle('dim', RO && !!FOCUS && !focused);
+    const colhd = RO ? '' : `<div class="colhd">${id === 'portada_centro' ? 'Columna central' : 'Panel derecho'} · <label><input type="checkbox" data-op="col" data-c="${id}" ${doc.enabled !== false ? 'checked' : ''}> visible</label><select data-op="add" data-c="${id}"><option value="">+ bloque</option>${Object.entries(NAMES).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></div>`;
+    col.innerHTML = `${colhd}${top}<div class="grow"></div>${bottom}`;
   }
-  $('#app').classList.toggle('noaside', docs.portada_derecha?.enabled === false);
+  // El panel apagado no ocupa sitio, como en la app; pero si es el que se está
+  // mirando en la vista previa, se le deja su hueco para poder verlo.
+  $('#app').classList.toggle('noaside', docs.portada_derecha?.enabled === false && !(RO && FOCUS === 'portada_derecha'));
   window.lucide?.createIcons({ attrs: { 'stroke-width': 1.5 } });
 }
 
@@ -325,7 +348,7 @@ $('#lang').onchange = (e) => { lang = e.target.value; render(); };
 $('#theme').onclick = () => { theme = theme === 'dark' ? 'light' : 'dark'; applyTheme(); };
 window.addEventListener('beforeunload', (e) => { if (dirty) e.preventDefault(); });
 applyTheme(); fit();
-if (location.protocol === 'file:') status('Ábrelo con: node scripts/portada-editor.mjs', 'err'); else load();
+if (!RO && location.protocol === 'file:') status('Ábrelo con: node scripts/portada-editor.mjs', 'err'); else load();
 </script>
 </body>
 </html>
