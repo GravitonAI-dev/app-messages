@@ -38,6 +38,11 @@ createServer(async (req, res) => {
     if (!check.ok) await writeFile(join(ROOT, file), previous);
     return send(res, check.ok ? 200 : 422, check);
   }
+  // Con qué reconoce la página que la sirve el editor y no el servicio
+  // desplegado: si esto no responde, se queda en sólo lectura.
+  if (url.pathname === '/api/editor') {
+    return send(res, 200, { editor: true });
+  }
   if (url.pathname === '/api/publish' && req.method === 'POST') {
     const check = await sh('node', ['scripts/validate.mjs']);
     if (!check.ok) return send(res, 422, check);
